@@ -1,0 +1,3106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otto Transport System</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --border: #e1e5ea;
+      --ink: #2b2f33;
+      --muted: #6b7480;
+      --primary: #2f6fed;
+      --primary-ink: #1d4fc4;
+      --primary-tint: #eaf1ff;
+      --marking: #f2c230;
+      --ok: #1f7a4d;
+      --bad: #c0392b;
+      --sidebar-w: 232px;
+      --sidebar-w-collapsed: 68px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    [hidden] { display: none !important; }
+    svg { display: block; }
+
+    /* ---------- Shared controls ---------- */
+    button {
+      font-family: inherit;
+      background: var(--primary);
+      color: #fff;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--primary-ink); }
+    button:focus-visible { outline: 3px solid var(--marking); outline-offset: 2px; }
+    button:disabled { opacity: 0.6; cursor: default; }
+    button.wide { width: 100%; margin-top: 20px; }
+    button.outline {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+    }
+    button.outline:hover { background: var(--primary-tint); border-color: var(--primary); }
+    button.icon-btn {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    button.icon-btn:hover { background: var(--primary-tint); border-color: var(--primary); }
+
+    .msg { margin: 12px 0 0; min-height: 1.4em; font-weight: 600; }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .warn { color: #a8710a; font-weight: 700; }
+    .muted { color: var(--muted); }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .card .hint { margin: 0 0 16px; color: var(--muted); font-size: 0.9rem; }
+
+    /* ---------- Sign in ---------- */
+    .login-wrap { max-width: 400px; margin: 48px auto 0; padding: 0 16px; }
+    label { display: block; margin: 14px 0 4px; font-weight: 600; font-size: 0.92rem; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid #c3c9cf;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+    }
+    input:focus-visible { outline: 3px solid var(--marking); outline-offset: 1px; border-color: var(--primary); }
+
+    /* ---------- App shell: sidebar + content ---------- */
+    /* The sidebar is always a column, never an overlay drawer. On desktop it
+       can be a narrow icon rail or expanded with labels. On narrow screens
+       it always stays as the narrow icon rail, so no extra menu button is
+       needed anywhere in the layout. */
+    .shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      min-height: 100vh;
+      transition: grid-template-columns 0.15s ease;
+    }
+    .shell.collapsed { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+
+    .sidebar {
+      background: var(--panel);
+      color: var(--ink);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      border-right: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .brand-text { overflow: hidden; }
+    .brand-text strong { display: block; font-size: 1.02rem; letter-spacing: 0.01em; color: var(--ink); }
+    .brand-text span { display: block; margin-top: 1px; color: var(--muted); font-size: 0.78rem; }
+    .shell.collapsed .brand-text { display: none; }
+
+    nav { padding: 10px 8px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      color: var(--ink);
+      border-radius: 6px;
+      border: 0;
+      border-left: 3px solid transparent;
+      padding: 10px 12px;
+      font-weight: 500;
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+    .nav-item:hover { background: var(--primary-tint); }
+    .nav-item.active {
+      background: var(--primary-tint);
+      color: var(--primary-ink);
+      font-weight: 700;
+      border-left-color: var(--primary);
+    }
+    .nav-item .icon { flex: 0 0 auto; color: inherit; }
+    .nav-item .label { overflow: hidden; text-overflow: ellipsis; }
+    .shell.collapsed .nav-item { justify-content: center; padding: 10px; }
+    .shell.collapsed .nav-item .label { display: none; }
+
+    .content { min-width: 0; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar h1 { margin: 0; font-size: 1.2rem; flex: 1; color: var(--ink); }
+    .who { display: flex; align-items: center; gap: 12px; }
+    .who-text { text-align: right; line-height: 1.25; }
+    .who-name { font-weight: 600; }
+    .who-role { color: var(--muted); font-size: 0.82rem; }
+
+    /* ---------- Notifications bell ---------- */
+    .notif-wrap { position: relative; }
+    .notif-bell {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px;
+      cursor: pointer; color: var(--ink);
+    }
+    .notif-bell:hover { background: var(--primary-tint); color: var(--primary-ink); border-color: var(--primary); }
+    .notif-badge {
+      position: absolute; top: -5px; right: -5px; background: #c92a2a; color: #fff;
+      font-size: 0.68rem; font-weight: 700; border-radius: 999px; min-width: 16px; height: 16px;
+      line-height: 16px; text-align: center; padding: 0 3px;
+    }
+    .notif-panel {
+      position: absolute; top: calc(100% + 8px); right: 0; width: 340px; max-height: 420px;
+      overflow-y: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.15); z-index: 50;
+    }
+    .notif-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .notif-panel-head h3 { margin: 0; font-size: 0.95rem; }
+    .link-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.8rem; padding: 0; }
+    .link-btn:hover { text-decoration: underline; }
+    .notif-item { padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item.unread { background: var(--primary-tint); }
+    .notif-item .notif-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; color: var(--primary); margin-bottom: 2px; }
+    .notif-item .notif-msg { font-size: 0.86rem; color: var(--ink); line-height: 1.35; }
+    .notif-item .notif-time { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
+    .notif-empty { padding: 24px 14px; text-align: center; color: var(--muted); font-size: 0.86rem; }
+
+    #page { padding: 24px; max-width: 1400px; }
+    .card { width: 100%; }
+
+    /* ---------- Dashboard ---------- */
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .page-head .stamp { color: var(--muted); font-size: 0.88rem; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .tile {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 16px 18px 14px;
+    }
+    .tile.attention { border-top-color: var(--marking); }
+    .tile-value { font-size: 2.4rem; font-weight: 700; line-height: 1.1; color: var(--ink); }
+    .tile-label { margin-top: 6px; font-weight: 600; }
+    .tile-hint { margin-top: 2px; color: var(--muted); font-size: 0.85rem; }
+
+    .panel { margin-top: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; }
+    .panel h3 { margin: 0 0 8px; font-size: 1rem; }
+    .stat-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border); }
+    .stat-row .label { color: var(--muted); }
+    .stat-row .value { font-weight: 700; }
+
+    .placeholder h2 { margin: 0 0 6px; font-size: 1.15rem; }
+    .placeholder p { margin: 0; color: var(--muted); }
+
+    /* ---------- Module forms and lists (Users, Vehicles, Drivers, ...) ---------- */
+    .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-bar input[type="text"] { flex: 1 1 220px; min-width: 160px; margin: 0; }
+    .filter-bar select { flex: 0 0 auto; min-width: 150px; padding: 9px 10px; border: 1px solid #c3c9cf; border-radius: 6px; font-family: inherit; font-size: 0.92rem; background: #fff; color: var(--ink); }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 16px; margin-top: 4px; }
+    .form-grid label { margin: 10px 0 4px; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .table-wrap { overflow-x: auto; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 9px 10px; border-top: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+    th { color: var(--muted); font-weight: 600; }
+    td .row-btn { padding: 6px 12px; font-size: 0.85rem; margin-right: 6px; }
+
+    /* ---------- Status badges: a distinct color per status value ---------- */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.5;
+    }
+    .status-pending     { background: #fdf1d9; color: #a8710a; }
+    .status-allocated   { background: var(--primary-tint); color: var(--primary-ink); }
+    .status-reached     { background: #f4e8fc; color: #8a3ec9; }
+    .status-loading     { background: #fdebd8; color: #b35a00; }
+    .status-ontrip      { background: #e2f6f6; color: #0c8599; }
+    .status-completed   { background: #e3f6ec; color: #1f7a4d; }
+    .status-cancelled   { background: #eef1f5; color: #6b7480; }
+    .status-rejected    { background: #fbe6e3; color: #c0392b; }
+    .status-active      { background: #e3f6ec; color: #1f7a4d; }
+    .status-inactive    { background: #eef1f5; color: #6b7480; }
+    .status-available   { background: #e3f6ec; color: #1f7a4d; }
+    .status-maintenance { background: #fdebd8; color: #b35a00; }
+    .status-leave       { background: #fdf1d9; color: #a8710a; }
+
+    /* ---------- Action buttons: a distinct color per action ---------- */
+    .btn-icon { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
+    .btn-icon svg { display: block; }
+
+    .row-btn.btn-view       { color: #2f6fed; border-color: #2f6fed; }
+    .row-btn.btn-timeline   { color: #7048e8; border-color: #7048e8; }
+    .row-btn.btn-edit       { color: #1864ab; border-color: #1864ab; }
+    .row-btn.btn-resetPassword { color: #495057; border-color: #495057; }
+    .row-btn.btn-allocate   { color: #2b8a3e; border-color: #2b8a3e; }
+    .row-btn.btn-reject     { color: #c92a2a; border-color: #c92a2a; }
+    .row-btn.btn-cancel     { color: #e8590c; border-color: #e8590c; }
+    .row-btn.btn-startLoading { color: #f08c00; border-color: #f08c00; }
+    .row-btn.btn-endLoading { color: #087f5b; border-color: #087f5b; }
+    .row-btn.btn-reached    { color: #ae3ec9; border-color: #ae3ec9; }
+    .row-btn.btn-startTrip  { color: #0c8599; border-color: #0c8599; }
+    .row-btn.btn-endTrip    { color: #d6336c; border-color: #d6336c; }
+    .row-btn.btn-export     { color: #0b7285; border-color: #0b7285; }
+
+    .row-btn.btn-view:hover       { background: #2f6fed; color: #fff; }
+    .row-btn.btn-timeline:hover   { background: #7048e8; color: #fff; }
+    .row-btn.btn-edit:hover       { background: #1864ab; color: #fff; }
+    .row-btn.btn-resetPassword:hover { background: #495057; color: #fff; }
+    .row-btn.btn-allocate:hover   { background: #2b8a3e; color: #fff; }
+    .row-btn.btn-reject:hover     { background: #c92a2a; color: #fff; }
+    .row-btn.btn-cancel:hover     { background: #e8590c; color: #fff; }
+    .row-btn.btn-startLoading:hover { background: #f08c00; color: #fff; }
+    .row-btn.btn-endLoading:hover { background: #087f5b; color: #fff; }
+    .row-btn.btn-reached:hover    { background: #ae3ec9; color: #fff; }
+    .row-btn.btn-startTrip:hover  { background: #0c8599; color: #fff; }
+    .row-btn.btn-endTrip:hover    { background: #d6336c; color: #fff; }
+    .row-btn.btn-export:hover     { background: #0b7285; color: #fff; }
+
+    /* ---------- Narrow screens ---------- */
+    /* The sidebar stays visible as the narrow icon rail; it does not hide
+       and does not need a menu button. Only the expand control disappears,
+       since there isn't room to show labels next to the content. */
+    @media (max-width: 700px) {
+      .shell { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr) !important; }
+      .brand-text, .nav-item .label { display: none !important; }
+      .nav-item { justify-content: center; padding: 10px; }
+      .collapseBtn { display: none; }
+      .topbar { padding: 12px 16px; }
+      .who-text { display: none; }
+      #page { padding: 16px; }
+    }
+    /* ---------- Request details (View) modal ---------- */
+    .view-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 34, 38, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+    .view-card {
+      background: var(--panel);
+      border-radius: 8px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .view-head h2 { margin: 0; font-size: 1.1rem; }
+    .view-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--border); }
+    .view-row .label { color: var(--muted); flex: 0 0 auto; }
+    .view-row .value { font-weight: 600; text-align: right; max-width: 62%; }
+
+    /* ---------- Request Timeline (Gantt + detail) modal ---------- */
+    .timeline-card { max-width: 820px; }
+    .timeline-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 16px; color: var(--muted); font-size: 0.88rem; }
+    .timeline-meta strong { color: var(--ink); }
+    .timeline-total { margin: 0 0 18px; font-weight: 700; color: var(--primary-ink); }
+
+    .gantt { margin-bottom: 22px; }
+    .gantt-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+    .gantt-row-label { flex: 0 0 140px; font-size: 0.85rem; color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gantt-track { flex: 1 1 auto; position: relative; height: 22px; background: #eef1f5; border-radius: 4px; overflow: hidden; }
+    .gantt-seg {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-radius: 4px;
+      min-width: 3px;
+    }
+    .gantt-dot {
+      position: absolute;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid #fff;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .gantt-legend { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+    .gantt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .gantt-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+    .timeline-table th, .timeline-table td { white-space: normal; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shell { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Shown while a saved session is being checked -->
+  <div id="startView" class="login-wrap">
+    <p class="msg muted" id="startMsg">Checking your session...</p>
+  </div>
+
+  <!-- Sign in -->
+  <div id="loginView" class="login-wrap" hidden>
+    <section class="card">
+      <h2>Otto Transport System</h2>
+      <p class="hint">Sign in with your Email or Employee Code.</p>
+
+      <label for="identifier">Email or Employee Code</label>
+      <input type="text" id="identifier" autocomplete="username" autocapitalize="none">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+
+      <button type="button" id="loginBtn" class="wide">Sign in</button>
+      <p class="msg bad" id="loginMsg" role="alert"></p>
+    </section>
+  </div>
+
+  <!-- Signed in -->
+  <div id="appView" class="shell" hidden>
+    <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+      <div class="brand">
+        <button type="button" id="collapseBtn" class="icon-btn collapseBtn" aria-label="Collapse or expand menu" title="Collapse or expand menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="7" x2="20" y2="7"></line>
+            <line x1="4" y1="12" x2="20" y2="12"></line>
+            <line x1="4" y1="17" x2="20" y2="17"></line>
+          </svg>
+        </button>
+        <div class="brand-text">
+          <strong>Otto Transport</strong>
+          <span>Fleet and GV tracking</span>
+        </div>
+      </div>
+      <nav id="nav" aria-label="Main menu"></nav>
+    </aside>
+
+    <div class="content">
+      <div class="topbar">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="who">
+          <div class="notif-wrap">
+            <button type="button" id="notifBellBtn" class="notif-bell" aria-label="Notifications">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span class="notif-badge" id="notifBadge" hidden>0</span>
+            </button>
+            <div class="notif-panel" id="notifPanel" hidden>
+              <div class="notif-panel-head">
+                <h3>Notifications</h3>
+                <button type="button" id="notifMarkAllBtn" class="link-btn">Mark all read</button>
+              </div>
+              <div class="notif-list" id="notifList"></div>
+            </div>
+          </div>
+          <div class="who-text">
+            <div class="who-name" id="whoName"></div>
+            <div class="who-role" id="whoRole"></div>
+          </div>
+          <button type="button" id="logoutBtn" class="outline">Sign out</button>
+        </div>
+      </div>
+      <main id="page"></main>
+    </div>
+  </div>
+
+  <!-- Request details, opened by the View button on a request row -->
+  <div class="view-overlay" id="viewOverlay" hidden>
+    <div class="view-card" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <div class="view-head">
+        <h2 id="viewTitle">Request</h2>
+        <button type="button" id="viewCloseBtn" class="icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div id="viewBody"></div>
+    </div>
+  </div>
+
+  <!-- Allocate a vehicle and driver to a request, opened from the Allocate button -->
+  <div class="view-overlay" id="allocateOverlay" hidden>
+    <div class="view-card" role="dialog" aria-modal="true" aria-labelledby="allocTitle">
+      <div class="view-head">
+        <h2 id="allocTitle">Allocate</h2>
+        <button type="button" id="allocCloseBtn" class="icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="form-grid">
+        <div><label for="allocVehicle">Vehicle</label><select id="allocVehicle"></select></div>
+        <div><label for="allocDriver">Driver</label><select id="allocDriver"></select></div>
+        <div><label for="allocStart">Planned Start</label><input id="allocStart" type="datetime-local"></div>
+        <div><label for="allocRemarks">Remarks (optional)</label><input id="allocRemarks" type="text"></div>
+      </div>
+      <p class="hint">Vehicle and driver lists only show those currently Available. The trip is assumed to take up to a few hours for scheduling checks.</p>
+      <div class="actions">
+        <button type="button" id="allocSaveBtn">Allocate</button>
+        <button type="button" id="allocCancelBtn" class="outline">Cancel</button>
+      </div>
+      <p class="msg" id="allocMsg"></p>
+    </div>
+  </div>
+
+  <!-- Request Timeline: Gantt bar + detail table, opened from the Timeline button -->
+  <div class="view-overlay" id="timelineOverlay" hidden>
+    <div class="view-card timeline-card" role="dialog" aria-modal="true" aria-labelledby="timelineTitle">
+      <div class="view-head">
+        <h2 id="timelineTitle">Timeline</h2>
+        <button type="button" id="timelineCloseBtn" class="icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div id="timelineBody"></div>
+    </div>
+  </div>
+
+  <script>
+    var TIMEOUT_MS = 30000;
+    var state = { token: null, user: null, menu: [], current: 'dashboard', loadCounter: 0, notifPollTimer: null };
+
+    // ---------- Token storage (falls back to memory if the browser blocks it) ----------
+
+    function saveToken(t) { try { sessionStorage.setItem('otto_token', t); } catch (e) {} }
+    function loadToken() { try { return sessionStorage.getItem('otto_token'); } catch (e) { return null; } }
+    function clearToken() { try { sessionStorage.removeItem('otto_token'); } catch (e) {} }
+
+    // Per-browser convenience only: whether the sidebar shows icons only.
+    function loadCollapsed() { try { return localStorage.getItem('otto_sidebar_collapsed') !== '0'; } catch (e) { return true; } }
+    function saveCollapsed(v) { try { localStorage.setItem('otto_sidebar_collapsed', v ? '1' : '0'); } catch (e) {} }
+
+    // ---------- Safe backend call ----------
+    // Sends every call to the Otto backend on Cloudflare (worker.js).
+    // Always ends with success, an error, or "No response" after 30 seconds.
+
+    // Your Cloudflare Worker address (no slash at the end).
+    var API_URL = 'https://otto-api.candb-otto.workers.dev';
+
+    function callBackend(method, args, button, onSuccess, onError) {
+      var finished = false;
+      if (button) button.disabled = true;
+
+      function finish(handler, value) {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        if (button) button.disabled = false;
+        handler(value);
+      }
+
+      var timer = setTimeout(function () {
+        finish(onError, 'No response. Try again.');
+      }, TIMEOUT_MS);
+
+      // Only "get..." calls are retried automatically; a save is never sent twice.
+      var canRetry = /^get/.test(method);
+
+      function send(retriesLeft) {
+        fetch(API_URL, {
+          method: 'POST',
+          // text/plain keeps this a "simple" request, so the browser makes one trip, not two
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({ fn: method, args: args || [] })
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('Server error ' + r.status);
+            return r.json();
+          })
+          .then(function (res) {
+            if (res && res.success) {
+              finish(onSuccess, res);
+            } else {
+              finish(onError, (res && res.message) || 'Unknown error');
+            }
+          })
+          .catch(function () {
+            if (finished) return;
+            if (canRetry && retriesLeft > 0) {
+              setTimeout(function () { send(retriesLeft - 1); }, 1500);
+              return;
+            }
+            finish(onError, 'Could not reach the server. Check your internet connection and try again.');
+          });
+      }
+
+      send(2);
+    }
+
+    function el(tag, cls, text) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    // Case-insensitive substring match against any of the given fields.
+    function textMatches_(row, searchLower, fields) {
+      if (!searchLower) return true;
+      return fields.some(function (f) {
+        return String(row[f] || '').toLowerCase().indexOf(searchLower) >= 0;
+      });
+    }
+
+    // Filters a cached array by free-text search (across `fields`) and,
+    // optionally, an exact match on one field (e.g. Status or Role).
+    function filterRows_(rows, searchText, fields, exactValue, exactField) {
+      var searchLower = String(searchText || '').trim().toLowerCase();
+      return rows.filter(function (row) {
+        if (exactValue && row[exactField] !== exactValue) return false;
+        return textMatches_(row, searchLower, fields);
+      });
+    }
+
+    function addCellText(tr, text, cls) {
+      var td = document.createElement('td');
+      td.textContent = text;
+      if (cls) td.className = cls;
+      tr.appendChild(td);
+      return td;
+    }
+
+    // A status cell rendered as a colored pill, instead of plain text, so
+    // each status value reads at a glance. cls is one of the .status-*
+    // classes (see requestStatusClass and friends below).
+    function addStatusCell(tr, text, cls) {
+      var td = document.createElement('td');
+      var span = document.createElement('span');
+      span.className = 'status-badge' + (cls ? ' ' + cls : '');
+      span.textContent = text;
+      td.appendChild(span);
+      tr.appendChild(td);
+      return td;
+    }
+
+    // A row-action button with its own icon and color per action kind
+    // (see actionIconSvg below), so buttons doing different things are
+    // visually distinct rather than a wall of identical gray buttons.
+    function actionBtn_(kind, label) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'outline row-btn btn-' + kind;
+      var icon = document.createElement('span');
+      icon.className = 'btn-icon';
+      icon.innerHTML = actionIconSvg(kind);
+      btn.appendChild(icon);
+      btn.appendChild(document.createTextNode(label));
+      return btn;
+    }
+
+    function isSessionError(msg) {
+      return String(msg).indexOf('session is invalid') >= 0;
+    }
+
+    // Converts a stored date (dd/MM/yyyy, or already yyyy-MM-dd) into the
+    // yyyy-MM-dd format an <input type="date"> needs. Returns '' otherwise.
+    function toIsoDateForInput_(value) {
+      var s = String(value || '').trim();
+      if (!s) return '';
+      var iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) return iso[1] + '-' + iso[2] + '-' + iso[3];
+      var dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (dmy) {
+        var dd = dmy[1].length === 1 ? '0' + dmy[1] : dmy[1];
+        var mm = dmy[2].length === 1 ? '0' + dmy[2] : dmy[2];
+        return dmy[3] + '-' + mm + '-' + dd;
+      }
+      return '';
+    }
+
+    // ---------- Menu icons (inline SVG, no external files) ----------
+
+    function iconSvg(id) {
+      var a = 'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+      switch (id) {
+        case 'dashboard':
+          return '<svg ' + a + '><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>';
+        case 'gvRequests':
+          return '<svg ' + a + '><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3v2h6V3"></path><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="16" y2="14"></line></svg>';
+        case 'allocations':
+          return '<svg ' + a + '><path d="M4 7h13l-3-3"></path><path d="M20 17H7l3 3"></path></svg>';
+        case 'vehicles':
+          return '<svg ' + a + '><path d="M3 13h11v5H3z"></path><path d="M14 13l3-4h3l1 4v5h-4"></path><circle cx="7" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg>';
+        case 'drivers':
+          return '<svg ' + a + '><circle cx="12" cy="8" r="3.2"></circle><path d="M5 20c1.5-4 5-5 7-5s5.5 1 7 5"></path></svg>';
+        case 'users':
+          return '<svg ' + a + '><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.3"></circle><path d="M3 20c1-3.2 3.8-5 6-5s5 1.8 6 5"></path><path d="M15 15.2c1.8.3 3.5 1.6 4.3 4.3"></path></svg>';
+        case 'newRequest':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
+        case 'myRequests':
+          return '<svg ' + a + '><line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>';
+        case 'pendingRequests':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
+        case 'reports':
+          return '<svg ' + a + '><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3" height="7"></rect><rect x="11" y="7" width="3" height="11"></rect><rect x="16" y="14" width="3" height="4"></rect></svg>';
+        case 'departments':
+          return '<svg ' + a + '><rect x="4" y="10" width="6" height="10"></rect><rect x="14" y="4" width="6" height="16"></rect><line x1="7" y1="14" x2="7" y2="14.01"></line><line x1="17" y1="8" x2="17" y2="8.01"></line><line x1="17" y1="12" x2="17" y2="12.01"></line></svg>';
+        case 'locations':
+          return '<svg ' + a + '><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>';
+        default:
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle></svg>';
+      }
+    }
+
+    // ---------- Action button icons (inline SVG, no external files) ----------
+
+    function actionIconSvg(kind) {
+      var a = 'width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+      switch (kind) {
+        case 'view':
+          return '<svg ' + a + '><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        case 'timeline':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
+        case 'edit':
+          return '<svg ' + a + '><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
+        case 'resetPassword':
+          return '<svg ' + a + '><circle cx="7" cy="15" r="3.5"></circle><path d="M9.5 12.5 19 3"></path><path d="M15.5 6.5 18 9"></path></svg>';
+        case 'allocate':
+          return '<svg ' + a + '><rect x="6" y="3" width="12" height="18" rx="2"></rect><path d="M9 12l2 2 4-4"></path></svg>';
+        case 'reject':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>';
+        case 'cancel':
+          return '<svg ' + a + '><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>';
+        case 'startLoading':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="8 12 12 16 16 12"></polyline><line x1="12" y1="8" x2="12" y2="16"></line></svg>';
+        case 'endLoading':
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="8 12 11 15 16 9"></polyline></svg>';
+        case 'reached':
+          return '<svg ' + a + '><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>';
+        case 'startTrip':
+          return '<svg ' + a + '><polygon points="6 4 20 12 6 20 6 4"></polygon></svg>';
+        case 'endTrip':
+          return '<svg ' + a + '><path d="M5 3v18"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg>';
+        case 'export':
+          return '<svg ' + a + '><path d="M12 3v12"></path><polyline points="7 10 12 15 17 10"></polyline><path d="M5 21h14"></path></svg>';
+        default:
+          return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle></svg>';
+      }
+    }
+
+    // ---------- Excel export ----------
+
+    // Same CSV-field escaping as the backend's exports (Exports.gs): wraps
+    // a value in quotes, doubling any quote inside it, whenever it contains
+    // a comma, quote, or newline.
+    function csvField_(value) {
+      var s = value === undefined || value === null ? '' : String(value);
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    function csvRow_(cells) { return cells.map(csvField_).join(','); }
+    function buildCsvString_(headers, rows) {
+      var lines = [];
+      if (headers && headers.length) lines.push(csvRow_(headers));
+      (rows || []).forEach(function (r) { lines.push(csvRow_(r)); });
+      return '﻿' + lines.join('\r\n') + '\r\n';
+    }
+    function timestampForFileName_() {
+      var d = new Date();
+      function pad2(n) { return n < 10 ? '0' + n : String(n); }
+      return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+    }
+
+    // Builds a CSV entirely in the browser from whatever rows are passed in
+    // (so it exports exactly what is currently on screen - search text and
+    // status filter included - rather than re-fetching everything fresh
+    // from the backend) and downloads it.
+    function downloadCsv_(fileNameBase, headers, rows) {
+      var csv = buildCsvString_(headers, rows);
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = fileNameBase + '_' + timestampForFileName_() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    }
+
+    // A toolbar button that exports whatever rows rowsFn() returns right
+    // now (the page's own currently-filtered list) as a CSV, using
+    // mapperFn to turn each row object into one CSV row of cells.
+    function exportRowsButton_(label, fileNameBase, headers, mapperFn, rowsFn) {
+      var btn = actionBtn_('export', label);
+      btn.addEventListener('click', function () {
+        var rows = rowsFn();
+        if (!rows.length) { window.alert('Nothing to export for the current search / filter.'); return; }
+        downloadCsv_(fileNameBase, headers, rows.map(mapperFn));
+      });
+      return btn;
+    }
+
+    // Turns a base64 string the backend returned into a real file and
+    // triggers a normal browser download for it. Nothing is written to
+    // the user's Google Drive - the file only ever exists in the browser.
+    function downloadBase64File_(base64, filename, mimeType) {
+      var byteChars = atob(base64);
+      var byteNumbers = new Array(byteChars.length);
+      for (var i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      var byteArray = new Uint8Array(byteNumbers);
+      var blob = new Blob([byteArray], { type: mimeType });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    }
+
+    // A toolbar button that calls an export* backend function and downloads
+    // the .xlsx it returns. argsFn() builds the backend call's arguments
+    // fresh each click, so it can include whatever filters are on screen.
+    function exportButton_(label, method, argsFn) {
+      var btn = actionBtn_('export', label);
+      btn.addEventListener('click', function () {
+        callBackend(method, argsFn(), btn,
+          function (res) { downloadBase64File_(res.data.base64, res.data.fileName, res.data.mimeType); },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            window.alert(err);
+          });
+      });
+      return btn;
+    }
+
+    // ---------- Notifications (bell icon in the topbar) ----------
+
+    var notifCache = [];
+    var notifPanelOpen = false;
+
+    function timeAgo_(createdAt) {
+      // CreatedAt is stored as "dd/MM/yyyy HH:mm:ss" (parseTimestamp_ in
+      // Utils.gs understands that same format); falls back to the raw
+      // string if it can't be parsed.
+      var m = String(createdAt || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m) return createdAt || '';
+      var d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), Number(m[6] || 0));
+      var diffMs = Date.now() - d.getTime();
+      if (diffMs < 0 || isNaN(diffMs)) return createdAt;
+      var mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return mins + 'm ago';
+      var hours = Math.floor(mins / 60);
+      if (hours < 24) return hours + 'h ago';
+      var days = Math.floor(hours / 24);
+      if (days < 7) return days + 'd ago';
+      return createdAt;
+    }
+
+    function renderNotifPanel() {
+      var list = document.getElementById('notifList');
+      list.textContent = '';
+
+      // Only unread items are shown here - the bell is a "what's new"
+      // list, not a permanent log, so reading an item (or "Mark all
+      // read") clears it out of view rather than leaving it sitting
+      // there with a different style.
+      var unread = notifCache.filter(function (n) { return !n.isRead; });
+
+      if (unread.length === 0) {
+        list.appendChild(el('div', 'notif-empty', 'No new notifications.'));
+        return;
+      }
+
+      unread.forEach(function (n) {
+        var item = el('div', 'notif-item unread');
+        item.appendChild(el('div', 'notif-type', n.type));
+        item.appendChild(el('div', 'notif-msg', n.message));
+        item.appendChild(el('div', 'notif-time', timeAgo_(n.createdAt)));
+        item.addEventListener('click', function () { markOneNotificationRead_(n.notificationId); });
+        list.appendChild(item);
+      });
+    }
+
+    function updateNotifBadge_(unreadCount) {
+      var badge = document.getElementById('notifBadge');
+      if (unreadCount > 0) {
+        badge.hidden = false;
+        badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      } else {
+        badge.hidden = true;
+      }
+    }
+
+    function loadNotifications() {
+      if (!state.token) return;
+      callBackend('getMyNotifications', [state.token], null,
+        function (res) {
+          notifCache = res.data.notifications;
+          updateNotifBadge_(res.data.unreadCount);
+          if (notifPanelOpen) renderNotifPanel();
+        },
+        function (err) {
+          // Silent: a background poll failing (e.g. a momentarily expired
+          // session) should not interrupt whatever the user is doing.
+          if (isSessionError(err)) stopNotificationPolling();
+        });
+    }
+
+    function markOneNotificationRead_(notificationId) {
+      callBackend('markNotificationRead', [state.token, { notificationId: notificationId }], null,
+        function () { loadNotifications(); },
+        function () { /* best-effort */ });
+    }
+
+    function toggleNotifPanel_() {
+      notifPanelOpen = !notifPanelOpen;
+      document.getElementById('notifPanel').hidden = !notifPanelOpen;
+      if (notifPanelOpen) { renderNotifPanel(); loadNotifications(); }
+    }
+
+    function closeNotifPanel_() {
+      notifPanelOpen = false;
+      document.getElementById('notifPanel').hidden = true;
+    }
+
+    function startNotificationPolling() {
+      loadNotifications();
+      if (state.notifPollTimer) clearInterval(state.notifPollTimer);
+      state.notifPollTimer = setInterval(loadNotifications, 45000);
+    }
+
+    function stopNotificationPolling() {
+      if (state.notifPollTimer) { clearInterval(state.notifPollTimer); state.notifPollTimer = null; }
+      notifCache = [];
+      closeNotifPanel_();
+      updateNotifBadge_(0);
+    }
+
+    document.getElementById('notifBellBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleNotifPanel_();
+    });
+    document.getElementById('notifMarkAllBtn').addEventListener('click', function (e) {
+      e.stopPropagation();
+      callBackend('markAllNotificationsRead', [state.token], null,
+        function () { loadNotifications(); },
+        function (err) { if (isSessionError(err)) showLogin(err); });
+    });
+    document.getElementById('notifPanel').addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { if (notifPanelOpen) closeNotifPanel_(); });
+
+    // ---------- Views ----------
+
+    function showOnly(name) {
+      document.getElementById('startView').hidden = (name !== 'start');
+      document.getElementById('loginView').hidden = (name !== 'login');
+      document.getElementById('appView').hidden = (name !== 'app');
+    }
+
+    function showLogin(message) {
+      state.token = null;
+      state.user = null;
+      clearToken();
+      stopNotificationPolling();
+      document.getElementById('password').value = '';
+      document.getElementById('loginMsg').textContent = message || '';
+      showOnly('login');
+      document.getElementById('identifier').focus();
+    }
+
+    function showApp(user, menu) {
+      state.user = user;
+      state.menu = menu;
+
+      document.getElementById('whoName').textContent = user.name;
+      document.getElementById('whoRole').textContent = user.role;
+
+      var nav = document.getElementById('nav');
+      nav.textContent = '';
+      menu.forEach(function (item) {
+        var b = el('button', 'nav-item');
+        b.type = 'button';
+        b.setAttribute('data-id', item.id);
+        b.title = item.label;
+
+        var icon = el('span', 'icon');
+        icon.innerHTML = iconSvg(item.id);
+        b.appendChild(icon);
+        b.appendChild(el('span', 'label', item.label));
+
+        b.addEventListener('click', function () {
+          openPage(item.id);
+        });
+        nav.appendChild(b);
+      });
+
+      document.getElementById('appView').classList.toggle('collapsed', loadCollapsed());
+      showOnly('app');
+      openPage('dashboard');
+      startNotificationPolling();
+    }
+
+    // ---------- Sidebar: icon-only console by default, expandable on desktop ----------
+
+    function toggleCollapse() {
+      var collapsed = !document.getElementById('appView').classList.contains('collapsed');
+      document.getElementById('appView').classList.toggle('collapsed', collapsed);
+      saveCollapsed(collapsed);
+    }
+
+    // ---------- Pages ----------
+
+    function openPage(id) {
+      state.current = id;
+      state.loadCounter++;
+
+      var label = id;
+      state.menu.forEach(function (item) { if (item.id === id) label = item.label; });
+      document.getElementById('pageTitle').textContent = label;
+
+      var buttons = document.getElementById('nav').querySelectorAll('.nav-item');
+      for (var i = 0; i < buttons.length; i++) {
+        var active = buttons[i].getAttribute('data-id') === id;
+        buttons[i].classList.toggle('active', active);
+        if (active) buttons[i].setAttribute('aria-current', 'page');
+        else buttons[i].removeAttribute('aria-current');
+      }
+
+      if (id === 'dashboard') {
+        loadDashboard();
+      } else if (id === 'users') {
+        loadUsers();
+      } else if (id === 'departments') {
+        loadDepartments();
+      } else if (id === 'locations') {
+        loadLocations();
+      } else if (id === 'vehicles') {
+        loadVehicles();
+      } else if (id === 'drivers') {
+        loadDrivers();
+      } else if (id === 'newRequest') {
+        loadNewRequest();
+      } else if (id === 'myRequests') {
+        loadMyRequests();
+      } else if (id === 'pendingRequests') {
+        loadRequestsList(true);
+      } else if (id === 'gvRequests') {
+        loadRequestsList(false);
+      } else if (id === 'allocations') {
+        loadAllocationsList();
+      } else if (id === 'reports') {
+        loadReports();
+      } else {
+        showPlaceholder(label);
+      }
+    }
+
+    function showPlaceholder(label) {
+      var page = document.getElementById('page');
+      page.textContent = '';
+      var box = el('section', 'card placeholder');
+      box.appendChild(el('h2', '', label));
+      box.appendChild(el('p', '', 'This module is built in a later phase.'));
+      page.appendChild(box);
+    }
+
+    // ---------- Dashboard ----------
+
+    function loadDashboard() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var refresh = el('button', 'outline', 'Refresh');
+      refresh.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(refresh);
+      page.appendChild(head);
+
+      var body = el('div');
+      body.appendChild(el('p', 'msg muted', 'Loading dashboard...'));
+      page.appendChild(body);
+
+      function load() {
+        var thisLoad = ++state.loadCounter;
+        body.textContent = '';
+        body.appendChild(el('p', 'msg muted', 'Loading dashboard...'));
+
+        callBackend('getDashboard', [state.token], refresh,
+          function (res) {
+            if (thisLoad !== state.loadCounter || state.current !== 'dashboard') return;
+            stamp.textContent = 'Updated ' + res.data.generatedAt;
+            renderDashboard(body, res.data);
+          },
+          function (err) {
+            if (thisLoad !== state.loadCounter || state.current !== 'dashboard') return;
+            if (isSessionError(err)) { showLogin(err); return; }
+            body.textContent = '';
+            body.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      refresh.addEventListener('click', load);
+      load();
+    }
+
+    function renderDashboard(body, data) {
+      body.textContent = '';
+
+      var tiles = el('div', 'tiles');
+      data.primary.forEach(function (c) {
+        var tile = el('div', c.attention ? 'tile attention' : 'tile');
+        tile.appendChild(el('div', 'tile-value', String(c.value)));
+        tile.appendChild(el('div', 'tile-label', c.label));
+        tile.appendChild(el('div', 'tile-hint', c.hint));
+        tiles.appendChild(tile);
+      });
+      body.appendChild(tiles);
+
+      var panel = el('section', 'panel');
+      panel.appendChild(el('h3', '', data.secondaryTitle));
+      data.secondary.forEach(function (s) {
+        var row = el('div', 'stat-row');
+        row.appendChild(el('span', 'label', s.label));
+        row.appendChild(el('span', 'value', String(s.value)));
+        panel.appendChild(row);
+      });
+      body.appendChild(panel);
+    }
+
+    // ---------- Users (Admin only) ----------
+
+    function loadUsers() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var addBtn = el('button', 'outline', 'Add User');
+      addBtn.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(addBtn);
+      page.appendChild(head);
+
+      var formCard = el('section', 'card');
+      formCard.id = 'userFormCard';
+      formCard.hidden = true;
+      formCard.innerHTML =
+        '<h2 id="ufTitle">Add User</h2>' +
+        '<div class="form-grid">' +
+          '<div><label for="ufEmployeeCode">Employee Code</label><input id="ufEmployeeCode" type="text"></div>' +
+          '<div><label for="ufName">Name</label><input id="ufName" type="text"></div>' +
+          '<div><label for="ufEmail">Email (optional)</label><input id="ufEmail" type="text"></div>' +
+          '<div><label for="ufMobile">Mobile (optional)</label><input id="ufMobile" type="text"></div>' +
+          '<div id="ufPasswordWrap"><label for="ufPassword">Password</label><input id="ufPassword" type="password" autocomplete="new-password"></div>' +
+          '<div><label for="ufRole">Role</label><select id="ufRole"></select></div>' +
+          '<div><label for="ufDepartment">Department (optional)</label><select id="ufDepartment"></select></div>' +
+          '<div id="ufStatusWrap" hidden><label for="ufStatus">Status</label><select id="ufStatus"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" id="ufSaveBtn">Save</button><button type="button" id="ufCancelBtn" class="outline">Cancel</button></div>' +
+        '<p class="msg" id="ufMsg"></p>';
+      page.appendChild(formCard);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>All Users</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="usersSearch" placeholder="Search name, code, email, mobile, department...">' +
+          '<select id="usersRoleFilter"></select>' +
+          '<select id="usersStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Code</th><th>Name</th><th>Email</th><th>Mobile</th><th>Role</th><th>Department</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody id="usersBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var usersCache = [];
+      var rolesCache = [];
+      var departmentsCache = [];
+
+      function fillRoleSelect(select) {
+        select.textContent = '';
+        rolesCache.forEach(function (r) {
+          var opt = document.createElement('option');
+          opt.value = r;
+          opt.textContent = r;
+          select.appendChild(opt);
+        });
+      }
+
+      // Includes Inactive departments so a user already assigned one
+      // doesn't silently lose it, but labels them so that's clear.
+      function fillDepartmentSelect(select, currentDepartmentId) {
+        select.textContent = '';
+        var ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = '(none)';
+        select.appendChild(ph);
+        departmentsCache.forEach(function (d) {
+          if (!d.isActive && d.id !== currentDepartmentId) return;
+          var opt = document.createElement('option');
+          opt.value = d.id;
+          opt.textContent = d.name + (d.isActive ? '' : ' (Inactive)');
+          select.appendChild(opt);
+        });
+      }
+
+      function openForm(userOrNull) {
+        var editing = !!userOrNull;
+        document.getElementById('ufTitle').textContent = editing ? 'Edit User' : 'Add User';
+        formCard.setAttribute('data-editing-id', editing ? userOrNull.userId : '');
+
+        document.getElementById('ufEmployeeCode').value = editing ? userOrNull.employeeCode : '';
+        document.getElementById('ufEmployeeCode').disabled = editing;
+        document.getElementById('ufName').value = editing ? userOrNull.name : '';
+        document.getElementById('ufEmail').value = editing ? userOrNull.email : '';
+        document.getElementById('ufMobile').value = editing ? userOrNull.mobile : '';
+        fillDepartmentSelect(document.getElementById('ufDepartment'), editing ? userOrNull.departmentId : '');
+        document.getElementById('ufDepartment').value = editing ? userOrNull.departmentId : '';
+
+        fillRoleSelect(document.getElementById('ufRole'));
+        document.getElementById('ufRole').value = editing ? userOrNull.role : (rolesCache[0] || '');
+
+        document.getElementById('ufPasswordWrap').hidden = editing;
+        document.getElementById('ufPassword').value = '';
+
+        document.getElementById('ufStatusWrap').hidden = !editing;
+        if (editing) document.getElementById('ufStatus').value = userOrNull.status;
+
+        var msg = document.getElementById('ufMsg');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        formCard.hidden = false;
+        document.getElementById('ufEmployeeCode').focus();
+      }
+
+      function closeForm() {
+        formCard.hidden = true;
+      }
+
+      function saveForm() {
+        var editingId = formCard.getAttribute('data-editing-id');
+        var msg = document.getElementById('ufMsg');
+        var saveBtn = document.getElementById('ufSaveBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          employeeCode: document.getElementById('ufEmployeeCode').value.trim(),
+          name: document.getElementById('ufName').value.trim(),
+          email: document.getElementById('ufEmail').value.trim(),
+          mobile: document.getElementById('ufMobile').value.trim(),
+          role: document.getElementById('ufRole').value,
+          departmentId: document.getElementById('ufDepartment').value
+        };
+
+        function onErr(err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        }
+
+        if (editingId) {
+          payload.userId = editingId;
+          payload.status = document.getElementById('ufStatus').value;
+          callBackend('updateUser', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        } else {
+          payload.password = document.getElementById('ufPassword').value;
+          callBackend('createUser', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        }
+      }
+
+      function resetPassword(user) {
+        var pw = window.prompt('New password (at least 6 characters) for ' + user.name + ':');
+        if (pw === null) return;
+        if (pw.length < 6) {
+          window.alert('Password must be at least 6 characters.');
+          return;
+        }
+        callBackend('setUserPassword', [state.token, { userId: user.userId, password: pw }], null,
+          function () { window.alert('Password updated for ' + user.name + '.'); },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            window.alert(err);
+          });
+      }
+
+      function renderList(rows) {
+        var body = document.getElementById('usersBody');
+        body.textContent = '';
+        rows.forEach(function (u) {
+          var tr = document.createElement('tr');
+          addCellText(tr, u.employeeCode);
+          addCellText(tr, u.name);
+          addCellText(tr, u.email || '-');
+          addCellText(tr, u.mobile || '-');
+          addCellText(tr, u.role);
+          addCellText(tr, u.department || '-');
+          addStatusCell(tr, u.status, u.status === 'Active' ? 'status-active' : 'status-inactive');
+
+          var actionsTd = document.createElement('td');
+          var editBtn = actionBtn_('edit', 'Edit');
+          editBtn.addEventListener('click', function () { openForm(u); });
+
+          var pwBtn = actionBtn_('resetPassword', 'Reset password');
+          pwBtn.addEventListener('click', function () { resetPassword(u); });
+
+          actionsTd.appendChild(editBtn);
+          actionsTd.appendChild(pwBtn);
+          tr.appendChild(actionsTd);
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No users match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('usersSearch').value;
+        var role = document.getElementById('usersRoleFilter').value;
+        var status = document.getElementById('usersStatusFilter').value;
+        var filtered = filterRows_(usersCache, search, ['employeeCode', 'name', 'email', 'mobile', 'department'], role, 'role');
+        if (status) filtered = filtered.filter(function (u) { return u.status === status; });
+        renderList(filtered);
+      }
+
+      function loadList() {
+        stamp.textContent = 'Loading...';
+        callBackend('getUsers', [state.token], null,
+          function (res) {
+            usersCache = res.data.users;
+            rolesCache = res.data.roles;
+            departmentsCache = res.data.departments;
+            stamp.textContent = usersCache.length + (usersCache.length === 1 ? ' user' : ' users');
+            fillSelect(document.getElementById('usersRoleFilter'), rolesCache, null, null, 'All Roles');
+            fillSelect(document.getElementById('usersStatusFilter'), ['Active', 'Inactive'], null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      addBtn.addEventListener('click', function () { openForm(null); });
+      document.getElementById('ufSaveBtn').addEventListener('click', saveForm);
+      document.getElementById('ufCancelBtn').addEventListener('click', closeForm);
+      document.getElementById('usersSearch').addEventListener('input', applyFilters);
+      document.getElementById('usersRoleFilter').addEventListener('change', applyFilters);
+      document.getElementById('usersStatusFilter').addEventListener('change', applyFilters);
+
+      loadList();
+    }
+
+    // ---------- Departments (Admin) ----------
+
+    function loadDepartments() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var addBtn = el('button', 'outline', 'Add Department');
+      addBtn.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(addBtn);
+      page.appendChild(head);
+
+      var formCard = el('section', 'card');
+      formCard.hidden = true;
+      formCard.innerHTML =
+        '<h2 id="dfTitle">Add Department</h2>' +
+        '<div class="form-grid">' +
+          '<div><label for="dfName">Department Name</label><input id="dfName" type="text"></div>' +
+          '<div><label for="dfStatus">Status</label><select id="dfStatus"><option value="true">Active</option><option value="false">Inactive</option></select></div>' +
+          '<div><label for="dfRemarks">Remarks (optional)</label><input id="dfRemarks" type="text"></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" id="dfSaveBtn">Save</button><button type="button" id="dfCancelBtn" class="outline">Cancel</button></div>' +
+        '<p class="msg" id="dfMsg"></p>';
+      page.appendChild(formCard);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>All Departments</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="deptSearch" placeholder="Search department name, remarks...">' +
+          '<select id="deptStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Department ID</th><th>Department Name</th><th>Status</th><th>Remarks</th><th></th>' +
+        '</tr></thead><tbody id="deptBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var deptCache = [];
+
+      function openForm(deptOrNull) {
+        var editing = !!deptOrNull;
+        document.getElementById('dfTitle').textContent = editing ? 'Edit Department' : 'Add Department';
+        formCard.setAttribute('data-editing-id', editing ? deptOrNull.departmentId : '');
+
+        document.getElementById('dfName').value = editing ? deptOrNull.departmentName : '';
+        document.getElementById('dfStatus').value = editing ? String(deptOrNull.isActive) : 'true';
+        document.getElementById('dfRemarks').value = editing ? deptOrNull.remarks : '';
+
+        var msg = document.getElementById('dfMsg');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        formCard.hidden = false;
+        document.getElementById('dfName').focus();
+      }
+
+      function closeForm() { formCard.hidden = true; }
+
+      function saveForm() {
+        var editingId = formCard.getAttribute('data-editing-id');
+        var msg = document.getElementById('dfMsg');
+        var saveBtn = document.getElementById('dfSaveBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          departmentName: document.getElementById('dfName').value.trim(),
+          isActive: document.getElementById('dfStatus').value === 'true',
+          remarks: document.getElementById('dfRemarks').value.trim()
+        };
+
+        function onErr(err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        }
+
+        if (editingId) {
+          payload.departmentId = editingId;
+          callBackend('updateDepartment', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        } else {
+          callBackend('createDepartment', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        }
+      }
+
+      function renderList(rows) {
+        var body = document.getElementById('deptBody');
+        body.textContent = '';
+        rows.forEach(function (d) {
+          var tr = document.createElement('tr');
+          addCellText(tr, d.departmentId);
+          addCellText(tr, d.departmentName);
+          addStatusCell(tr, d.isActive ? 'Active' : 'Inactive', d.isActive ? 'status-active' : 'status-inactive');
+          addCellText(tr, d.remarks || '-');
+
+          var actionsTd = document.createElement('td');
+          var editBtn = actionBtn_('edit', 'Edit');
+          editBtn.addEventListener('click', function () { openForm(d); });
+          actionsTd.appendChild(editBtn);
+          tr.appendChild(actionsTd);
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No departments match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('deptSearch').value;
+        var status = document.getElementById('deptStatusFilter').value;
+        var filtered = filterRows_(deptCache, search, ['departmentName', 'remarks']);
+        if (status) filtered = filtered.filter(function (d) { return String(d.isActive) === status; });
+        renderList(filtered);
+      }
+
+      function loadList() {
+        stamp.textContent = 'Loading...';
+        callBackend('getDepartments', [state.token], null,
+          function (res) {
+            deptCache = res.data.departments;
+            stamp.textContent = deptCache.length + (deptCache.length === 1 ? ' department' : ' departments');
+            fillSelect(document.getElementById('deptStatusFilter'), [{ v: 'true', l: 'Active' }, { v: 'false', l: 'Inactive' }], 'v', 'l', 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      addBtn.addEventListener('click', function () { openForm(null); });
+      document.getElementById('dfSaveBtn').addEventListener('click', saveForm);
+      document.getElementById('dfCancelBtn').addEventListener('click', closeForm);
+      document.getElementById('deptSearch').addEventListener('input', applyFilters);
+      document.getElementById('deptStatusFilter').addEventListener('change', applyFilters);
+
+      loadList();
+    }
+
+    // ---------- Locations (Admin) ----------
+
+    function loadLocations() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var addBtn = el('button', 'outline', 'Add Location');
+      addBtn.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(addBtn);
+      page.appendChild(head);
+
+      var formCard = el('section', 'card');
+      formCard.hidden = true;
+      formCard.innerHTML =
+        '<h2 id="lfTitle">Add Location</h2>' +
+        '<div class="form-grid">' +
+          '<div><label for="lfName">Location Name</label><input id="lfName" type="text"></div>' +
+          '<div><label for="lfCode">Location Code (optional)</label><input id="lfCode" type="text"></div>' +
+          '<div><label for="lfType">Location Type (optional)</label><input id="lfType" type="text" placeholder="e.g. Plant, Warehouse, Office"></div>' +
+          '<div><label for="lfStatus">Status</label><select id="lfStatus"><option value="true">Active</option><option value="false">Inactive</option></select></div>' +
+          '<div><label for="lfAddress">Address (optional)</label><input id="lfAddress" type="text"></div>' +
+          '<div><label for="lfRemarks">Remarks (optional)</label><input id="lfRemarks" type="text"></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" id="lfSaveBtn">Save</button><button type="button" id="lfCancelBtn" class="outline">Cancel</button></div>' +
+        '<p class="msg" id="lfMsg"></p>';
+      page.appendChild(formCard);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>All Locations</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="locSearch" placeholder="Search name, code, type, address...">' +
+          '<select id="locStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Location ID</th><th>Name</th><th>Code</th><th>Type</th><th>Address</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody id="locBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var locCache = [];
+
+      function openForm(locOrNull) {
+        var editing = !!locOrNull;
+        document.getElementById('lfTitle').textContent = editing ? 'Edit Location' : 'Add Location';
+        formCard.setAttribute('data-editing-id', editing ? locOrNull.locationId : '');
+
+        document.getElementById('lfName').value = editing ? locOrNull.locationName : '';
+        document.getElementById('lfCode').value = editing ? locOrNull.locationCode : '';
+        document.getElementById('lfType').value = editing ? locOrNull.locationType : '';
+        document.getElementById('lfStatus').value = editing ? String(locOrNull.isActive) : 'true';
+        document.getElementById('lfAddress').value = editing ? locOrNull.address : '';
+        document.getElementById('lfRemarks').value = editing ? locOrNull.remarks : '';
+
+        var msg = document.getElementById('lfMsg');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        formCard.hidden = false;
+        document.getElementById('lfName').focus();
+      }
+
+      function closeForm() { formCard.hidden = true; }
+
+      function saveForm() {
+        var editingId = formCard.getAttribute('data-editing-id');
+        var msg = document.getElementById('lfMsg');
+        var saveBtn = document.getElementById('lfSaveBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          locationName: document.getElementById('lfName').value.trim(),
+          locationCode: document.getElementById('lfCode').value.trim(),
+          locationType: document.getElementById('lfType').value.trim(),
+          isActive: document.getElementById('lfStatus').value === 'true',
+          address: document.getElementById('lfAddress').value.trim(),
+          remarks: document.getElementById('lfRemarks').value.trim()
+        };
+
+        function onErr(err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        }
+
+        if (editingId) {
+          payload.locationId = editingId;
+          callBackend('updateLocation', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        } else {
+          callBackend('createLocation', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        }
+      }
+
+      function renderList(rows) {
+        var body = document.getElementById('locBody');
+        body.textContent = '';
+        rows.forEach(function (l) {
+          var tr = document.createElement('tr');
+          addCellText(tr, l.locationId);
+          addCellText(tr, l.locationName);
+          addCellText(tr, l.locationCode || '-');
+          addCellText(tr, l.locationType || '-');
+          addCellText(tr, l.address || '-');
+          addStatusCell(tr, l.isActive ? 'Active' : 'Inactive', l.isActive ? 'status-active' : 'status-inactive');
+
+          var actionsTd = document.createElement('td');
+          var editBtn = actionBtn_('edit', 'Edit');
+          editBtn.addEventListener('click', function () { openForm(l); });
+          actionsTd.appendChild(editBtn);
+          tr.appendChild(actionsTd);
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No locations match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('locSearch').value;
+        var status = document.getElementById('locStatusFilter').value;
+        var filtered = filterRows_(locCache, search, ['locationName', 'locationCode', 'locationType', 'address']);
+        if (status) filtered = filtered.filter(function (l) { return String(l.isActive) === status; });
+        renderList(filtered);
+      }
+
+      function loadList() {
+        stamp.textContent = 'Loading...';
+        callBackend('getLocations', [state.token], null,
+          function (res) {
+            locCache = res.data.locations;
+            stamp.textContent = locCache.length + (locCache.length === 1 ? ' location' : ' locations');
+            fillSelect(document.getElementById('locStatusFilter'), [{ v: 'true', l: 'Active' }, { v: 'false', l: 'Inactive' }], 'v', 'l', 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      addBtn.addEventListener('click', function () { openForm(null); });
+      document.getElementById('lfSaveBtn').addEventListener('click', saveForm);
+      document.getElementById('lfCancelBtn').addEventListener('click', closeForm);
+      document.getElementById('locSearch').addEventListener('input', applyFilters);
+      document.getElementById('locStatusFilter').addEventListener('change', applyFilters);
+
+      loadList();
+    }
+
+    // ---------- Vehicles (Admin and FD_User) ----------
+
+    function loadVehicles() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var addBtn = el('button', 'outline', 'Add Vehicle');
+      addBtn.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(addBtn);
+      page.appendChild(head);
+
+      var formCard = el('section', 'card');
+      formCard.id = 'vehicleFormCard';
+      formCard.hidden = true;
+      formCard.innerHTML =
+        '<h2 id="vfTitle">Add Vehicle</h2>' +
+        '<div class="form-grid">' +
+          '<div><label for="vfVehicleNo">Vehicle No</label><input id="vfVehicleNo" type="text"></div>' +
+          '<div><label for="vfType">Type</label><input id="vfType" type="text"></div>' +
+          '<div><label for="vfSubType">Sub Type (optional)</label><input id="vfSubType" type="text"></div>' +
+          '<div><label for="vfCapacity">Capacity</label><input id="vfCapacity" type="number" min="1" step="1"></div>' +
+          '<div><label for="vfLocation">Current Location</label><input id="vfLocation" type="text"></div>' +
+          '<div><label for="vfStatus">Status</label><select id="vfStatus"></select></div>' +
+          '<div><label for="vfActiveFrom">Active From (optional)</label><input id="vfActiveFrom" type="date"></div>' +
+          '<div><label for="vfRemarks">Remarks (optional)</label><input id="vfRemarks" type="text"></div>' +
+        '</div>' +
+        '<p class="hint">Allocated and On Trip are normally set automatically once the Allocations and Trip modules are built. Set them here only to correct a stuck record.</p>' +
+        '<div class="actions"><button type="button" id="vfSaveBtn">Save</button><button type="button" id="vfCancelBtn" class="outline">Cancel</button></div>' +
+        '<p class="msg" id="vfMsg"></p>';
+      page.appendChild(formCard);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>All Vehicles</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="vehiclesSearch" placeholder="Search vehicle no, type, location...">' +
+          '<select id="vehiclesStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Vehicle No</th><th>Type</th><th>Capacity</th><th>Location</th><th>Status</th><th>Active From</th><th></th>' +
+        '</tr></thead><tbody id="vehiclesBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var vehiclesCache = [];
+      var statusesCache = [];
+
+      function fillStatusSelect(select) {
+        select.textContent = '';
+        statusesCache.forEach(function (s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          select.appendChild(opt);
+        });
+      }
+
+      function openForm(vehicleOrNull) {
+        var editing = !!vehicleOrNull;
+        document.getElementById('vfTitle').textContent = editing ? 'Edit Vehicle' : 'Add Vehicle';
+        formCard.setAttribute('data-editing-id', editing ? vehicleOrNull.vehicleId : '');
+
+        document.getElementById('vfVehicleNo').value = editing ? vehicleOrNull.vehicleNo : '';
+        document.getElementById('vfType').value = editing ? vehicleOrNull.type : '';
+        document.getElementById('vfSubType').value = editing ? vehicleOrNull.subType : '';
+        document.getElementById('vfCapacity').value = editing ? vehicleOrNull.capacity : '';
+        document.getElementById('vfLocation').value = editing ? vehicleOrNull.currentLocation : '';
+        document.getElementById('vfRemarks').value = editing ? vehicleOrNull.remarks : '';
+        document.getElementById('vfActiveFrom').value = editing ? toIsoDateForInput_(vehicleOrNull.activeFrom) : '';
+
+        fillStatusSelect(document.getElementById('vfStatus'));
+        document.getElementById('vfStatus').value = editing ? vehicleOrNull.status : 'Available';
+
+        var msg = document.getElementById('vfMsg');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        formCard.hidden = false;
+        document.getElementById('vfVehicleNo').focus();
+      }
+
+      function closeForm() {
+        formCard.hidden = true;
+      }
+
+      function saveForm() {
+        var editingId = formCard.getAttribute('data-editing-id');
+        var msg = document.getElementById('vfMsg');
+        var saveBtn = document.getElementById('vfSaveBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          vehicleNo: document.getElementById('vfVehicleNo').value.trim(),
+          type: document.getElementById('vfType').value.trim(),
+          subType: document.getElementById('vfSubType').value.trim(),
+          capacity: document.getElementById('vfCapacity').value.trim(),
+          currentLocation: document.getElementById('vfLocation').value.trim(),
+          status: document.getElementById('vfStatus').value,
+          activeFrom: document.getElementById('vfActiveFrom').value,
+          remarks: document.getElementById('vfRemarks').value.trim()
+        };
+
+        function onErr(err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        }
+
+        if (editingId) {
+          payload.vehicleId = editingId;
+          callBackend('updateVehicle', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        } else {
+          callBackend('createVehicle', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        }
+      }
+
+      function statusClass(status) {
+        if (status === 'Available') return 'status-available';
+        if (status === 'Allocated') return 'status-allocated';
+        if (status === 'On Trip') return 'status-ontrip';
+        if (status === 'Maintenance') return 'status-maintenance';
+        if (status === 'Inactive') return 'status-inactive';
+        return '';
+      }
+
+      function renderList(rows) {
+        var body = document.getElementById('vehiclesBody');
+        body.textContent = '';
+        rows.forEach(function (v) {
+          var tr = document.createElement('tr');
+          addCellText(tr, v.vehicleNo);
+          addCellText(tr, v.type + (v.subType ? ' / ' + v.subType : ''));
+          addCellText(tr, String(v.capacity));
+          addCellText(tr, v.currentLocation || '-');
+          addStatusCell(tr, v.status, statusClass(v.status));
+          addCellText(tr, v.activeFrom || '-');
+
+          var actionsTd = document.createElement('td');
+          var editBtn = actionBtn_('edit', 'Edit');
+          editBtn.addEventListener('click', function () { openForm(v); });
+          actionsTd.appendChild(editBtn);
+          tr.appendChild(actionsTd);
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No vehicles match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('vehiclesSearch').value;
+        var status = document.getElementById('vehiclesStatusFilter').value;
+        renderList(filterRows_(vehiclesCache, search, ['vehicleNo', 'type', 'subType', 'currentLocation'], status, 'status'));
+      }
+
+      function loadList() {
+        stamp.textContent = 'Loading...';
+        callBackend('getVehicles', [state.token], null,
+          function (res) {
+            vehiclesCache = res.data.vehicles;
+            statusesCache = res.data.statuses;
+            stamp.textContent = vehiclesCache.length + (vehiclesCache.length === 1 ? ' vehicle' : ' vehicles');
+            fillSelect(document.getElementById('vehiclesStatusFilter'), statusesCache, null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      addBtn.addEventListener('click', function () { openForm(null); });
+      document.getElementById('vfSaveBtn').addEventListener('click', saveForm);
+      document.getElementById('vfCancelBtn').addEventListener('click', closeForm);
+      document.getElementById('vehiclesSearch').addEventListener('input', applyFilters);
+      document.getElementById('vehiclesStatusFilter').addEventListener('change', applyFilters);
+
+      loadList();
+    }
+
+    // ---------- Drivers (Admin and FD_User) ----------
+
+    function loadDrivers() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      var addBtn = el('button', 'outline', 'Add Driver');
+      addBtn.type = 'button';
+      head.appendChild(stamp);
+      head.appendChild(addBtn);
+      page.appendChild(head);
+
+      var formCard = el('section', 'card');
+      formCard.id = 'driverFormCard';
+      formCard.hidden = true;
+      formCard.innerHTML =
+        '<h2 id="dfTitle">Add Driver</h2>' +
+        '<div class="form-grid">' +
+          '<div><label for="dfName">Driver Name</label><input id="dfName" type="text"></div>' +
+          '<div><label for="dfEmployeeCode">Employee Code (optional)</label><input id="dfEmployeeCode" type="text"></div>' +
+          '<div><label for="dfMobile">Mobile</label><input id="dfMobile" type="text"></div>' +
+          '<div><label for="dfLicenseNo">License No</label><input id="dfLicenseNo" type="text"></div>' +
+          '<div><label for="dfLicenseExpiry">License Expiry</label><input id="dfLicenseExpiry" type="date"></div>' +
+          '<div><label for="dfStatus">Status</label><select id="dfStatus"></select></div>' +
+          '<div><label for="dfRemarks">Remarks (optional)</label><input id="dfRemarks" type="text"></div>' +
+        '</div>' +
+        '<p class="hint">Allocated and On Trip are normally set automatically once the Allocations and Trip modules are built. Set them here only to correct a stuck record.</p>' +
+        '<div class="actions"><button type="button" id="dfSaveBtn">Save</button><button type="button" id="dfCancelBtn" class="outline">Cancel</button></div>' +
+        '<p class="msg" id="dfMsg"></p>';
+      page.appendChild(formCard);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>All Drivers</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="driversSearch" placeholder="Search name, mobile, license no...">' +
+          '<select id="driversStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Name</th><th>Mobile</th><th>License No</th><th>License Expiry</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody id="driversBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var driversCache = [];
+      var statusesCache = [];
+
+      function fillStatusSelect(select) {
+        select.textContent = '';
+        statusesCache.forEach(function (s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          select.appendChild(opt);
+        });
+      }
+
+      function openForm(driverOrNull) {
+        var editing = !!driverOrNull;
+        document.getElementById('dfTitle').textContent = editing ? 'Edit Driver' : 'Add Driver';
+        formCard.setAttribute('data-editing-id', editing ? driverOrNull.driverId : '');
+
+        document.getElementById('dfName').value = editing ? driverOrNull.driverName : '';
+        document.getElementById('dfEmployeeCode').value = editing ? driverOrNull.employeeCode : '';
+        document.getElementById('dfMobile').value = editing ? driverOrNull.mobile : '';
+        document.getElementById('dfLicenseNo').value = editing ? driverOrNull.licenseNo : '';
+        document.getElementById('dfLicenseExpiry').value = editing ? toIsoDateForInput_(driverOrNull.licenseExpiry) : '';
+        document.getElementById('dfRemarks').value = editing ? driverOrNull.remarks : '';
+
+        fillStatusSelect(document.getElementById('dfStatus'));
+        document.getElementById('dfStatus').value = editing ? driverOrNull.status : 'Available';
+
+        var msg = document.getElementById('dfMsg');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        formCard.hidden = false;
+        document.getElementById('dfName').focus();
+      }
+
+      function closeForm() {
+        formCard.hidden = true;
+      }
+
+      function saveForm() {
+        var editingId = formCard.getAttribute('data-editing-id');
+        var msg = document.getElementById('dfMsg');
+        var saveBtn = document.getElementById('dfSaveBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          driverName: document.getElementById('dfName').value.trim(),
+          employeeCode: document.getElementById('dfEmployeeCode').value.trim(),
+          mobile: document.getElementById('dfMobile').value.trim(),
+          licenseNo: document.getElementById('dfLicenseNo').value.trim(),
+          licenseExpiry: document.getElementById('dfLicenseExpiry').value,
+          status: document.getElementById('dfStatus').value,
+          remarks: document.getElementById('dfRemarks').value.trim()
+        };
+
+        function onErr(err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        }
+
+        if (editingId) {
+          payload.driverId = editingId;
+          callBackend('updateDriver', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        } else {
+          callBackend('createDriver', [state.token, payload], saveBtn,
+            function () { closeForm(); loadList(); }, onErr);
+        }
+      }
+
+      function statusClass(status) {
+        if (status === 'Available') return 'status-available';
+        if (status === 'Allocated') return 'status-allocated';
+        if (status === 'On Trip') return 'status-ontrip';
+        if (status === 'Leave') return 'status-leave';
+        if (status === 'Inactive') return 'status-inactive';
+        return '';
+      }
+
+      function isExpirySoon(iso) {
+        if (!iso) return false;
+        var days = (new Date(iso + 'T00:00:00') - new Date()) / 86400000;
+        return days < 30;
+      }
+
+      function renderList(rows) {
+        var body = document.getElementById('driversBody');
+        body.textContent = '';
+        rows.forEach(function (d) {
+          var tr = document.createElement('tr');
+          addCellText(tr, d.driverName);
+          addCellText(tr, d.mobile);
+          addCellText(tr, d.licenseNo);
+          addCellText(tr, d.licenseExpiry || '-', isExpirySoon(toIsoDateForInput_(d.licenseExpiry)) ? 'bad' : '');
+          addStatusCell(tr, d.status, statusClass(d.status));
+
+          var actionsTd = document.createElement('td');
+          var editBtn = actionBtn_('edit', 'Edit');
+          editBtn.addEventListener('click', function () { openForm(d); });
+          actionsTd.appendChild(editBtn);
+          tr.appendChild(actionsTd);
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No drivers match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('driversSearch').value;
+        var status = document.getElementById('driversStatusFilter').value;
+        renderList(filterRows_(driversCache, search, ['driverName', 'mobile', 'licenseNo'], status, 'status'));
+      }
+
+      function loadList() {
+        stamp.textContent = 'Loading...';
+        callBackend('getDrivers', [state.token], null,
+          function (res) {
+            driversCache = res.data.drivers;
+            statusesCache = res.data.statuses;
+            stamp.textContent = driversCache.length + (driversCache.length === 1 ? ' driver' : ' drivers');
+            fillSelect(document.getElementById('driversStatusFilter'), statusesCache, null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      addBtn.addEventListener('click', function () { openForm(null); });
+      document.getElementById('dfSaveBtn').addEventListener('click', saveForm);
+      document.getElementById('dfCancelBtn').addEventListener('click', closeForm);
+      document.getElementById('driversSearch').addEventListener('input', applyFilters);
+      document.getElementById('driversStatusFilter').addEventListener('change', applyFilters);
+
+      loadList();
+    }
+
+    // ---------- GV Requests: shared helpers ----------
+
+    function requestStatusClass(status) {
+      if (status === 'Pending' || status === 'Approved') return 'status-pending';
+      if (status === 'Allocated') return 'status-allocated';
+      if (status === 'Reached') return 'status-reached';
+      if (status === 'Loading') return 'status-loading';
+      if (status === 'On Trip') return 'status-ontrip';
+      if (status === 'Completed') return 'status-completed';
+      if (status === 'Cancelled') return 'status-cancelled';
+      if (status === 'Rejected') return 'status-rejected';
+      return '';
+    }
+
+    // Combines "dd/MM/yyyy" and "hh:mm AM/PM" (a request's own fields)
+    // into the "yyyy-MM-ddTHH:mm" value a datetime-local input needs.
+    function combineForDateTimeLocal(dateStr, timeStr) {
+      var dm = String(dateStr || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (!dm) return '';
+      var yyyy = dm[3];
+      var mm = dm[2].length === 1 ? '0' + dm[2] : dm[2];
+      var dd = dm[1].length === 1 ? '0' + dm[1] : dm[1];
+
+      var hh = '00';
+      var mi = '00';
+      var tm = String(timeStr || '').trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (tm) {
+        var h = parseInt(tm[1], 10);
+        var suffix = (tm[3] || '').toUpperCase();
+        if (suffix === 'PM' && h !== 12) h += 12;
+        if (suffix === 'AM' && h === 12) h = 0;
+        hh = h < 10 ? '0' + h : String(h);
+        mi = tm[2];
+      }
+      return yyyy + '-' + mm + '-' + dd + 'T' + hh + ':' + mi;
+    }
+
+    // ---------- Allocate modal ----------
+
+    var allocContext = { requestId: null, onDone: null };
+
+    function openAllocateModal(r, onDone) {
+      allocContext.requestId = r.requestId;
+      allocContext.onDone = onDone;
+
+      document.getElementById('allocTitle').textContent = 'Allocate for ' + r.requestId;
+      var msg = document.getElementById('allocMsg');
+      msg.textContent = '';
+      msg.className = 'msg';
+      document.getElementById('allocRemarks').value = '';
+      document.getElementById('allocStart').value = combineForDateTimeLocal(r.requiredDate, r.requiredTime);
+
+      var vehSel = document.getElementById('allocVehicle');
+      var drvSel = document.getElementById('allocDriver');
+      vehSel.textContent = '';
+      drvSel.textContent = '';
+      vehSel.appendChild(new Option('Loading...', ''));
+      drvSel.appendChild(new Option('Loading...', ''));
+
+      document.getElementById('allocateOverlay').hidden = false;
+
+      callBackend('getAllocationOptions', [state.token, { requiredType: r.requiredType }], null,
+        function (res) {
+          fillSelect(vehSel, res.data.vehicles, 'id', 'label', 'Select a vehicle');
+          fillSelect(drvSel, res.data.drivers, 'id', 'label', 'Select a driver');
+          if (res.data.vehicles.length === 0) {
+            msg.textContent = 'No Available ' + r.requiredType + ' vehicles right now.';
+            msg.className = 'msg bad';
+          } else if (res.data.drivers.length === 0) {
+            msg.textContent = 'No Available drivers right now.';
+            msg.className = 'msg bad';
+          }
+        },
+        function (err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        });
+    }
+
+    function closeAllocateModal() {
+      document.getElementById('allocateOverlay').hidden = true;
+    }
+
+    function submitAllocation() {
+      var msg = document.getElementById('allocMsg');
+      var btn = document.getElementById('allocSaveBtn');
+      msg.textContent = '';
+      msg.className = 'msg';
+
+      var payload = {
+        requestId: allocContext.requestId,
+        vehicleId: document.getElementById('allocVehicle').value,
+        driverId: document.getElementById('allocDriver').value,
+        plannedStartDateTime: document.getElementById('allocStart').value,
+        remarks: document.getElementById('allocRemarks').value.trim()
+      };
+
+      callBackend('createAllocation', [state.token, payload], btn,
+        function () {
+          closeAllocateModal();
+          if (allocContext.onDone) allocContext.onDone();
+        },
+        function (err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        });
+    }
+
+    function openRequestView(r) {
+      document.getElementById('viewTitle').textContent = 'Request ' + r.requestId;
+      var body = document.getElementById('viewBody');
+      body.textContent = '';
+
+      var fields = [
+        ['Requested By', r.requestedByName],
+        ['Department', r.departmentName || '-'],
+        ['From', r.fromLocationName],
+        ['To', r.toLocationName],
+        ['Required Date', r.requiredDate],
+        ['Required Time', r.requiredTime],
+        ['Purpose', r.purpose],
+        ['Goods Description', r.goodsDescription || '-'],
+        ['Vehicle Type', r.requiredType],
+        ['Vehicle Sub Type', r.requiredSubType || '-'],
+        ['Passenger / Load Count', r.requiredCapacity],
+        ['Priority', r.priority || '-'],
+        ['Remarks', r.remarks || '-'],
+        ['Status', r.status],
+        ['Vehicle', r.vehicleNo || '-'],
+        ['Driver', r.driverName || '-'],
+        ['Driver Mobile', r.driverMobile || '-'],
+        ['Reached Point', r.reachedDateTime || '-'],
+        ['Loading Start', r.loadingStartDateTime || '-'],
+        ['Loading End', r.loadingEndDateTime || '-'],
+        ['Trip Start', r.actualStartDateTime || '-'],
+        ['Trip End', r.actualEndDateTime || '-'],
+        ['Reject Reason', r.rejectReason || '-'],
+        ['Created At', r.createdAt],
+        ['Updated At', r.updatedAt],
+        ['Updated By', r.updatedByName || '-']
+      ];
+
+      fields.forEach(function (f) {
+        var row = el('div', 'view-row');
+        row.appendChild(el('span', 'label', f[0]));
+        row.appendChild(el('span', 'value', String(f[1] === undefined || f[1] === null || f[1] === '' ? '-' : f[1])));
+        body.appendChild(row);
+      });
+
+      document.getElementById('viewOverlay').hidden = false;
+    }
+
+    function closeRequestView() {
+      document.getElementById('viewOverlay').hidden = true;
+    }
+
+    // ---------- Request Timeline (Gantt + detail) ----------
+
+    var TIMELINE_COLORS = {
+      raised: '#6b7480',
+      allocated: '#2f6fed',
+      reached: '#f2c230',
+      loadingStart: '#e08a1e',
+      loadingEnd: '#c96a12',
+      tripStart: '#1f7a4d',
+      tripEnd: '#1d4fc4'
+    };
+
+    function openRequestTimeline(requestId) {
+      var overlay = document.getElementById('timelineOverlay');
+      var body = document.getElementById('timelineBody');
+      document.getElementById('timelineTitle').textContent = 'Timeline – ' + requestId;
+      body.textContent = '';
+      body.appendChild(el('p', 'hint', 'Loading timeline...'));
+      overlay.hidden = false;
+
+      callBackend('getRequestTimeline', [state.token, { requestId: requestId }], null,
+        function (res) { renderRequestTimeline(body, res.data); },
+        function (err) {
+          if (isSessionError(err)) { showLogin(err); return; }
+          body.textContent = '';
+          var p = el('p', 'msg bad', err);
+          body.appendChild(p);
+        });
+    }
+
+    function closeRequestTimeline() {
+      document.getElementById('timelineOverlay').hidden = true;
+    }
+
+    function renderRequestTimeline(body, data) {
+      body.textContent = '';
+
+      var meta = el('div', 'timeline-meta');
+      meta.appendChild(el('span', null, 'Vehicle: ' + (data.vehicleNo || '-') + (data.vehicleType ? ' (' + data.vehicleType + ')' : '')));
+      meta.appendChild(el('span', null, 'Driver: ' + (data.driverName || '-')));
+      meta.appendChild(el('span', null, 'Status: ' + data.status));
+      body.appendChild(meta);
+
+      if (data.isCancelled) {
+        body.appendChild(el('p', 'msg bad', 'The allocation shown below was Cancelled; its timeline stops at the point it was cancelled.'));
+      }
+
+      // ---- Plan vs Actual: Required vs Planned vs when the vehicle actually reached ----
+      var pva = data.planVsActual;
+      if (pva && (pva.requiredDateTime || pva.plannedStartDateTime || pva.reachedDateTime)) {
+        var pvaPanel = el('div', 'panel');
+        pvaPanel.appendChild(el('h3', null, 'Plan vs Actual'));
+
+        function pvaRow(label, valueText, gap) {
+          var row = el('div', 'stat-row');
+          row.appendChild(el('span', 'label', label));
+          var valueSpan = el('span', 'value', valueText || '-');
+          if (gap) {
+            var badge = el('span', gap.ms > 0 ? 'bad' : 'ok', ' (' + gap.label + ')');
+            valueSpan.appendChild(badge);
+          }
+          row.appendChild(valueSpan);
+          pvaPanel.appendChild(row);
+        }
+
+        pvaRow('Required Date & Time', pva.requiredDateTime, null);
+        pvaRow('Planned Start', pva.plannedStartDateTime, pva.requiredToPlanned);
+        pvaRow('Vehicle Reached (Actual)', pva.reachedDateTime, pva.plannedToReached);
+
+        body.appendChild(pvaPanel);
+      }
+
+      if (!data.stages.length) {
+        body.appendChild(el('p', 'hint', 'No stages have happened yet for this request.'));
+        return;
+      }
+
+      body.appendChild(el('p', 'timeline-total',
+        data.stages.length > 1 ? 'Total elapsed: ' + data.totalDuration : 'Only one stage recorded so far.'));
+
+      // ---- Visualisation 1: Gantt-style bar, one row per stage-to-stage segment ----
+      var gantt = el('div', 'gantt');
+      var totalMs = data.totalDurationMs > 0 ? data.totalDurationMs : 1;
+
+      data.stages.forEach(function (s, i) {
+        var row = el('div', 'gantt-row');
+        row.appendChild(el('span', 'gantt-row-label', s.label));
+
+        var track = el('div', 'gantt-track');
+        if (i > 0) {
+          var prev = data.stages[i - 1];
+          var left = (prev.offsetMs / totalMs) * 100;
+          var width = Math.max(((s.offsetMs - prev.offsetMs) / totalMs) * 100, 0.6);
+          var seg = el('div', 'gantt-seg');
+          seg.style.left = left + '%';
+          seg.style.width = width + '%';
+          seg.style.background = TIMELINE_COLORS[s.key] || 'var(--primary)';
+          seg.title = s.label + ': ' + s.gapFromPrevious + ' since ' + prev.label;
+          track.appendChild(seg);
+        }
+        var dot = el('div', 'gantt-dot');
+        dot.style.left = ((s.offsetMs / totalMs) * 100) + '%';
+        dot.style.background = TIMELINE_COLORS[s.key] || 'var(--primary)';
+        dot.title = s.label + ': ' + s.timestamp;
+        track.appendChild(dot);
+
+        row.appendChild(track);
+        gantt.appendChild(row);
+      });
+      body.appendChild(gantt);
+
+      var legend = el('div', 'gantt-legend');
+      data.stages.forEach(function (s) {
+        var item = el('span', null, '');
+        var swatch = el('i', null, '');
+        swatch.style.background = TIMELINE_COLORS[s.key] || 'var(--primary)';
+        item.appendChild(swatch);
+        item.appendChild(document.createTextNode(s.label));
+        legend.appendChild(item);
+      });
+      gantt.appendChild(legend);
+
+      // ---- Visualisation 2: detail data table ----
+      var wrap = el('div', 'table-wrap');
+      var table = document.createElement('table');
+      table.className = 'timeline-table';
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Stage</th><th>Date &amp; Time</th><th>Gap From Previous Stage</th></tr>';
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      data.stages.forEach(function (s) {
+        var tr = document.createElement('tr');
+        addCellText(tr, s.label);
+        addCellText(tr, s.timestamp);
+        addCellText(tr, s.gapFromPrevious);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      body.appendChild(wrap);
+    }
+
+    function fillSelect(select, options, valueKey, labelKey, placeholder) {
+      select.textContent = '';
+      if (placeholder) {
+        var ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = placeholder;
+        select.appendChild(ph);
+      }
+      options.forEach(function (o) {
+        var opt = document.createElement('option');
+        opt.value = valueKey ? o[valueKey] : o;
+        opt.textContent = labelKey ? o[labelKey] : o;
+        select.appendChild(opt);
+      });
+    }
+
+    /**
+     * Renders a table of GV Requests into tbody. opts controls which
+     * columns and action buttons appear, since My Requests, Pending
+     * Requests and GV Requests (admin) share almost the same table.
+     */
+    function renderRequestsTable(tbody, rows, opts, onChanged) {
+      tbody.textContent = '';
+
+      rows.forEach(function (r) {
+        var tr = document.createElement('tr');
+        addCellText(tr, r.requestId);
+        if (opts.showRequester) {
+          addCellText(tr, r.requestedByName);
+        }
+        addCellText(tr, r.fromLocationName + ' \u2192 ' + r.toLocationName);
+        addCellText(tr, r.requiredDate + ' ' + r.requiredTime);
+        addCellText(tr, r.purpose);
+        addCellText(tr, r.requiredType + (r.requiredCapacity ? ' (' + r.requiredCapacity + ')' : ''));
+        addCellText(tr, r.priority || '-');
+        addStatusCell(tr, r.status, requestStatusClass(r.status));
+
+        var actionsTd = document.createElement('td');
+
+        var viewBtn = actionBtn_('view', 'View');
+        viewBtn.addEventListener('click', function () { openRequestView(r); });
+        actionsTd.appendChild(viewBtn);
+
+        var timelineBtn = actionBtn_('timeline', 'Timeline');
+        timelineBtn.addEventListener('click', function () { openRequestTimeline(r.requestId); });
+        actionsTd.appendChild(timelineBtn);
+
+        if (opts.allowReject && r.reviewable) {
+          var rejectBtn = actionBtn_('reject', 'Reject');
+          rejectBtn.addEventListener('click', function () {
+            var reason = window.prompt('Reason for rejecting request ' + r.requestId + ':');
+            if (reason === null) return;
+            if (!reason.trim()) { window.alert('A reason is required.'); return; }
+            rejectBtn.disabled = true;
+            callBackend('rejectGvRequest', [state.token, { requestId: r.requestId, reason: reason.trim() }], rejectBtn,
+              function () { onChanged(); },
+              function (err) {
+                rejectBtn.disabled = false;
+                if (isSessionError(err)) { showLogin(err); return; }
+                window.alert(err);
+              });
+          });
+          actionsTd.appendChild(rejectBtn);
+        }
+
+        if (opts.allowAllocate && r.allocatable) {
+          var allocBtn = actionBtn_('allocate', 'Allocate');
+          allocBtn.addEventListener('click', function () { openAllocateModal(r, onChanged); });
+          actionsTd.appendChild(allocBtn);
+        }
+
+        if (opts.allowLoadingActions && r.canStartLoading) {
+          var startLoadBtn = actionBtn_('startLoading', 'Start Loading');
+          startLoadBtn.addEventListener('click', function () {
+            startLoadBtn.disabled = true;
+            callBackend('startLoading', [state.token, { allocationId: r.allocationId }], startLoadBtn,
+              function () { onChanged(); },
+              function (err) {
+                startLoadBtn.disabled = false;
+                if (isSessionError(err)) { showLogin(err); return; }
+                window.alert(err);
+              });
+          });
+          actionsTd.appendChild(startLoadBtn);
+        }
+
+        if (opts.allowLoadingActions && r.canEndLoading) {
+          var endLoadBtn = actionBtn_('endLoading', 'End Loading');
+          endLoadBtn.addEventListener('click', function () {
+            endLoadBtn.disabled = true;
+            callBackend('endLoading', [state.token, { allocationId: r.allocationId }], endLoadBtn,
+              function () { onChanged(); },
+              function (err) {
+                endLoadBtn.disabled = false;
+                if (isSessionError(err)) { showLogin(err); return; }
+                window.alert(err);
+              });
+          });
+          actionsTd.appendChild(endLoadBtn);
+        }
+
+        if (opts.allowCancel && r.cancellable) {
+          var cancelBtn = actionBtn_('cancel', 'Cancel');
+          cancelBtn.addEventListener('click', function () {
+            if (!window.confirm('Cancel request ' + r.requestId + '?')) return;
+            cancelBtn.disabled = true;
+            callBackend('cancelGvRequest', [state.token, { requestId: r.requestId }], cancelBtn,
+              function () { onChanged(); },
+              function (err) {
+                cancelBtn.disabled = false;
+                if (isSessionError(err)) { showLogin(err); return; }
+                window.alert(err);
+              });
+          });
+          actionsTd.appendChild(cancelBtn);
+        }
+
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---------- New GV Request (GV_User) ----------
+
+    function loadNewRequest() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var formCard = el('section', 'card');
+      formCard.innerHTML =
+        '<h2>New GV Request</h2>' +
+        '<p class="hint">Department is taken from your account.</p>' +
+        '<div class="form-grid">' +
+          '<div><label for="nrDepartment">Department</label><input id="nrDepartment" type="text" disabled></div>' +
+          '<div><label for="nrPurpose">Purpose</label><input id="nrPurpose" type="text"></div>' +
+          '<div><label for="nrFrom">From Location</label><select id="nrFrom"></select></div>' +
+          '<div><label for="nrTo">To Location</label><select id="nrTo"></select></div>' +
+          '<div><label for="nrDate">Required Date</label><input id="nrDate" type="date"></div>' +
+          '<div><label for="nrTime">Required Time</label><input id="nrTime" type="time"></div>' +
+          '<div><label for="nrType">Vehicle Type</label><select id="nrType"></select></div>' +
+          '<div><label for="nrSubType">Vehicle Sub Type (optional)</label><input id="nrSubType" type="text" placeholder="e.g. Truck, Mini Truck, Container"></div>' +
+          '<div><label for="nrCapacity">Passenger / Load Count</label><input id="nrCapacity" type="number" min="1" step="1"></div>' +
+          '<div><label for="nrPriority">Priority</label><select id="nrPriority"></select></div>' +
+          '<div><label for="nrGoods">Goods Description (optional)</label><input id="nrGoods" type="text"></div>' +
+          '<div><label for="nrRemarks">Remarks (optional)</label><input id="nrRemarks" type="text"></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" id="nrSubmitBtn">Submit Request</button></div>' +
+        '<p class="msg" id="nrMsg"></p>';
+      page.appendChild(formCard);
+
+      function resetForm() {
+        document.getElementById('nrPurpose').value = '';
+        document.getElementById('nrFrom').value = '';
+        document.getElementById('nrTo').value = '';
+        document.getElementById('nrDate').value = '';
+        document.getElementById('nrTime').value = '';
+        document.getElementById('nrSubType').value = '';
+        document.getElementById('nrCapacity').value = '';
+        document.getElementById('nrGoods').value = '';
+        document.getElementById('nrRemarks').value = '';
+      }
+
+      function loadOptions() {
+        callBackend('getGvRequestFormOptions', [state.token], null,
+          function (res) {
+            document.getElementById('nrDepartment').value = res.data.department || '(not set on your account)';
+            fillSelect(document.getElementById('nrFrom'), res.data.locations, 'id', 'name', 'Select a location');
+            fillSelect(document.getElementById('nrTo'), res.data.locations, 'id', 'name', 'Select a location');
+            fillSelect(document.getElementById('nrType'), res.data.vehicleTypes, null, null, 'Select a vehicle type');
+            fillSelect(document.getElementById('nrPriority'), res.data.priorities, null, null, null);
+            document.getElementById('nrPriority').value = 'Normal';
+            var msg = document.getElementById('nrMsg');
+            if (res.data.locations.length === 0) {
+              msg.textContent = 'No locations are set up yet. Ask an Admin to add locations before submitting a request.';
+              msg.className = 'msg bad';
+            } else if (res.data.vehicleTypes.length === 0) {
+              msg.textContent = 'No vehicle types are set up yet. Ask an Admin to add a vehicle before submitting a request.';
+              msg.className = 'msg bad';
+            }
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            var msg = document.getElementById('nrMsg');
+            msg.textContent = err;
+            msg.className = 'msg bad';
+          });
+      }
+
+      function submitForm() {
+        var msg = document.getElementById('nrMsg');
+        var btn = document.getElementById('nrSubmitBtn');
+        msg.textContent = '';
+        msg.className = 'msg';
+
+        var payload = {
+          purpose: document.getElementById('nrPurpose').value.trim(),
+          fromLocationId: document.getElementById('nrFrom').value,
+          toLocationId: document.getElementById('nrTo').value,
+          requiredDate: document.getElementById('nrDate').value,
+          requiredTime: document.getElementById('nrTime').value,
+          requiredType: document.getElementById('nrType').value.trim(),
+          requiredSubType: document.getElementById('nrSubType').value.trim(),
+          requiredCapacity: document.getElementById('nrCapacity').value.trim(),
+          priority: document.getElementById('nrPriority').value,
+          goodsDescription: document.getElementById('nrGoods').value.trim(),
+          remarks: document.getElementById('nrRemarks').value.trim()
+        };
+
+        callBackend('createGvRequest', [state.token, payload], btn,
+          function (res) {
+            msg.textContent = 'Request ' + res.data.requestId + ' submitted.';
+            msg.className = 'msg ok';
+            resetForm();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            msg.textContent = err;
+            msg.className = 'msg bad';
+          });
+      }
+
+      document.getElementById('nrSubmitBtn').addEventListener('click', submitForm);
+      loadOptions();
+    }
+
+    // ---------- My Requests (GV_User) ----------
+
+    function loadMyRequests() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      head.appendChild(stamp);
+      page.appendChild(head);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>My Requests</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="myReqSearch" placeholder="Search request id, purpose, route...">' +
+          '<select id="myReqStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Request ID</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody id="myReqBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var myReqCache = [];
+
+      function applyFilters() {
+        var search = document.getElementById('myReqSearch').value;
+        var status = document.getElementById('myReqStatusFilter').value;
+        var filtered = filterRows_(myReqCache, search, ['requestId', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
+        renderRequestsTable(document.getElementById('myReqBody'), filtered,
+          { showRequester: false, allowCancel: true, allowLoadingActions: true }, load);
+      }
+
+      function distinctStatuses_(rows) {
+        var seen = {}, list = [];
+        rows.forEach(function (r) { if (!seen[r.status]) { seen[r.status] = true; list.push(r.status); } });
+        return list;
+      }
+
+      function load() {
+        stamp.textContent = 'Loading...';
+        callBackend('getMyGvRequests', [state.token], null,
+          function (res) {
+            myReqCache = res.data.requests;
+            stamp.textContent = myReqCache.length + (myReqCache.length === 1 ? ' request' : ' requests');
+            fillSelect(document.getElementById('myReqStatusFilter'), distinctStatuses_(myReqCache), null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      document.getElementById('myReqSearch').addEventListener('input', applyFilters);
+      document.getElementById('myReqStatusFilter').addEventListener('change', applyFilters);
+
+      load();
+    }
+
+    // ---------- Pending Requests (FD_User) and GV Requests (Admin) ----------
+
+    function loadRequestsList(pendingOnly) {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      head.appendChild(stamp);
+      page.appendChild(head);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>' + (pendingOnly ? 'Pending Requests' : 'All GV Requests') + '</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="reqListSearch" placeholder="Search request id, requester, purpose, route...">' +
+          (pendingOnly ? '' : '<select id="reqListStatusFilter"></select>') +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Request ID</th><th>Requested By</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th></th>' +
+        '</tr></thead><tbody id="reqListBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var reqListCurrentFiltered = [];
+      var reqListExportHeaders = ['Request ID', 'Requested On', 'Requested By', 'Mobile', 'Department',
+        'Required Date', 'Required Time', 'From', 'To', 'Purpose', 'Goods Description',
+        'Vehicle Type', 'Sub Type', 'Capacity', 'Priority', 'Status', 'Remarks', 'Reject Reason',
+        'Updated At', 'Updated By'];
+      function reqListExportMapper_(v) {
+        return [v.requestId, v.requestDateTime, v.requestedByName, v.requestedByMobile, v.departmentName,
+          v.requiredDate, v.requiredTime, v.fromLocationName, v.toLocationName, v.purpose, v.goodsDescription,
+          v.requiredType, v.requiredSubType, v.requiredCapacity, v.priority, v.status, v.remarks, v.rejectReason,
+          v.updatedAt, v.updatedByName];
+      }
+      listCard.querySelector('.filter-bar').appendChild(
+        exportRowsButton_('Export to Excel', pendingOnly ? 'Pending_Requests' : 'GV_Requests',
+          reqListExportHeaders, reqListExportMapper_, function () { return reqListCurrentFiltered; }));
+
+      var baseRows = [];
+
+      function applyFilters() {
+        var search = document.getElementById('reqListSearch').value;
+        var statusEl = document.getElementById('reqListStatusFilter');
+        var status = statusEl ? statusEl.value : '';
+        var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
+        reqListCurrentFiltered = filtered;
+        renderRequestsTable(document.getElementById('reqListBody'), filtered,
+          { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true }, load);
+      }
+
+      function distinctStatuses_(rows) {
+        var seen = {}, list = [];
+        rows.forEach(function (r) { if (!seen[r.status]) { seen[r.status] = true; list.push(r.status); } });
+        return list;
+      }
+
+      function load() {
+        stamp.textContent = 'Loading...';
+        callBackend('getGvRequests', [state.token], null,
+          function (res) {
+            baseRows = pendingOnly
+              ? res.data.requests.filter(function (r) { return r.status === 'Pending'; })
+              : res.data.requests;
+            stamp.textContent = baseRows.length + (baseRows.length === 1 ? ' request' : ' requests');
+            var statusEl = document.getElementById('reqListStatusFilter');
+            if (statusEl) fillSelect(statusEl, distinctStatuses_(baseRows), null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      document.getElementById('reqListSearch').addEventListener('input', applyFilters);
+      var reqListStatusFilterEl = document.getElementById('reqListStatusFilter');
+      if (reqListStatusFilterEl) reqListStatusFilterEl.addEventListener('change', applyFilters);
+
+      load();
+    }
+
+    // ---------- Allocations (Admin and FD_User) ----------
+
+    function allocationStatusClass(status) {
+      if (status === 'Allocated') return 'status-allocated';
+      if (status === 'Reached') return 'status-reached';
+      if (status === 'Loading') return 'status-loading';
+      if (status === 'On Trip') return 'status-ontrip';
+      if (status === 'Completed') return 'status-completed';
+      if (status === 'Cancelled') return 'status-cancelled';
+      return '';
+    }
+
+    function allocationActionButton_(kind, label, method, allocationId, onDone) {
+      var btn = actionBtn_(kind, label);
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        callBackend(method, [state.token, { allocationId: allocationId }], btn,
+          function () { onDone(); },
+          function (err) {
+            btn.disabled = false;
+            if (isSessionError(err)) { showLogin(err); return; }
+            window.alert(err);
+          });
+      });
+      return btn;
+    }
+
+    function loadAllocationsList() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var head = el('div', 'page-head');
+      var stamp = el('span', 'stamp', '');
+      head.appendChild(stamp);
+      page.appendChild(head);
+
+      var listCard = el('section', 'card');
+      listCard.innerHTML =
+        '<h2>Allocations</h2>' +
+        '<div class="filter-bar">' +
+          '<input type="text" id="allocSearch" placeholder="Search allocation id, request id, requester, route, vehicle, driver...">' +
+          '<select id="allocStatusFilter"></select>' +
+        '</div>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+        '<th>Allocation ID</th><th>Request</th><th>Requested By</th><th>Requester Mobile</th><th>Requested On</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Driver Mobile</th><th>Planned Start</th><th>Status</th><th>Allocated By</th><th></th>' +
+        '</tr></thead><tbody id="allocListBody"></tbody></table></div>';
+      page.appendChild(listCard);
+
+      var allocCurrentFiltered = [];
+      var allocExportHeaders = ['Allocation ID', 'Request ID', 'Route', 'Requested By', 'Requester Mobile',
+        'Vehicle No', 'Vehicle Type', 'Driver', 'Driver Mobile', 'Allocated By', 'Allocated On',
+        'Planned Start', 'Reached', 'Loading Start', 'Loading End', 'Trip Start', 'Trip End',
+        'Status', 'Remarks', 'Updated At', 'Updated By'];
+      function allocExportMapper_(a) {
+        return [a.allocationId, a.requestId,
+          (a.requestFromLocationName && a.requestToLocationName) ? (a.requestFromLocationName + ' → ' + a.requestToLocationName) : '-',
+          a.requestedByName || '-', a.requestedByMobile || '-', a.vehicleNo, a.vehicleType, a.driverName,
+          a.driverMobile || '-', a.allocatedByName, a.allocationDateTime, a.plannedStartDateTime,
+          a.reachedDateTime, a.loadingStartDateTime, a.loadingEndDateTime, a.actualStartDateTime,
+          a.actualEndDateTime, a.status, a.remarks, a.updatedAt, a.updatedByName];
+      }
+      listCard.querySelector('.filter-bar').appendChild(
+        exportRowsButton_('Export to Excel', 'Allocations', allocExportHeaders, allocExportMapper_,
+          function () { return allocCurrentFiltered; }));
+
+      var allocCache = [];
+
+      function distinctStatuses_(rows) {
+        var seen = {}, list = [];
+        rows.forEach(function (r) { if (!seen[r.status]) { seen[r.status] = true; list.push(r.status); } });
+        return list;
+      }
+
+      function renderAllocRows(rows) {
+        var body = document.getElementById('allocListBody');
+        body.textContent = '';
+        rows.forEach(function (a) {
+          var tr = document.createElement('tr');
+          addCellText(tr, a.allocationId);
+          addCellText(tr, a.requestId + (a.requestPurpose ? ' \u2013 ' + a.requestPurpose : ''));
+          addCellText(tr, a.requestedByName || '-');
+          addCellText(tr, a.requestedByMobile || '-');
+          addCellText(tr, a.requestDateTime || '-');
+          addCellText(tr, (a.requestFromLocationName && a.requestToLocationName)
+            ? (a.requestFromLocationName + ' \u2192 ' + a.requestToLocationName) : '-');
+          addCellText(tr, a.vehicleNo);
+          addCellText(tr, a.driverName);
+          addCellText(tr, a.driverMobile || '-');
+          addCellText(tr, a.plannedStartDateTime);
+          addStatusCell(tr, a.status, allocationStatusClass(a.status));
+          addCellText(tr, a.allocatedByName);
+
+          var actionsTd = document.createElement('td');
+          var allocTimelineBtn = actionBtn_('timeline', 'Timeline');
+          allocTimelineBtn.addEventListener('click', function (requestId) {
+            return function () { openRequestTimeline(requestId); };
+          }(a.requestId));
+          actionsTd.appendChild(allocTimelineBtn);
+          if (a.canMarkReached) {
+            actionsTd.appendChild(allocationActionButton_('reached', 'Vehicle Reached', 'markVehicleReached', a.allocationId, load));
+          }
+          if (a.canStartTrip) {
+            actionsTd.appendChild(allocationActionButton_('startTrip', 'Start Trip', 'startTrip', a.allocationId, load));
+          }
+          if (a.canEndTrip) {
+            actionsTd.appendChild(allocationActionButton_('endTrip', 'End Trip', 'endTrip', a.allocationId, load));
+          }
+          tr.appendChild(actionsTd);
+
+          body.appendChild(tr);
+        });
+        if (rows.length === 0) {
+          var tr2 = document.createElement('tr');
+          addCellText(tr2, 'No allocations match your search.');
+          body.appendChild(tr2);
+        }
+      }
+
+      function applyFilters() {
+        var search = document.getElementById('allocSearch').value;
+        var status = document.getElementById('allocStatusFilter').value;
+        var filtered = filterRows_(allocCache, search, ['allocationId', 'requestId', 'requestedByName', 'requestedByMobile', 'requestFromLocationName', 'requestToLocationName', 'vehicleNo', 'driverName', 'driverMobile', 'allocatedByName'], status, 'status');
+        allocCurrentFiltered = filtered;
+        renderAllocRows(filtered);
+      }
+
+      function load() {
+        stamp.textContent = 'Loading...';
+        callBackend('getAllocations', [state.token], null,
+          function (res) {
+            allocCache = res.data.allocations;
+            stamp.textContent = allocCache.length + (allocCache.length === 1 ? ' allocation' : ' allocations');
+            fillSelect(document.getElementById('allocStatusFilter'), distinctStatuses_(allocCache), null, null, 'All Statuses');
+            applyFilters();
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            stamp.textContent = '';
+            listCard.appendChild(el('p', 'msg bad', err));
+          });
+      }
+
+      document.getElementById('allocSearch').addEventListener('input', applyFilters);
+      document.getElementById('allocStatusFilter').addEventListener('change', applyFilters);
+
+      load();
+    }
+
+    // ---------- Reports (Admin) ----------
+
+    function loadReports() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var filterCard = el('section', 'card');
+      filterCard.innerHTML =
+        '<h2>Reports</h2>' +
+        '<p class="hint">Leave both dates blank to include everything.</p>' +
+        '<div class="form-grid">' +
+          '<div><label for="rpFrom">From Date (optional)</label><input id="rpFrom" type="date"></div>' +
+          '<div><label for="rpTo">To Date (optional)</label><input id="rpTo" type="date"></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" id="rpApplyBtn">Apply</button><button type="button" id="rpResetBtn" class="outline">Reset</button></div>' +
+        '<p class="msg" id="rpMsg"></p>';
+      page.appendChild(filterCard);
+
+      filterCard.querySelector('.actions').appendChild(
+        exportButton_('Export to Excel', 'exportReportsExcel', function () {
+          return [state.token, {
+            fromDate: document.getElementById('rpFrom').value,
+            toDate: document.getElementById('rpTo').value
+          }];
+        }));
+
+      var summaryCard = el('section', 'card');
+      summaryCard.innerHTML = '<h2>Summary</h2><div class="tiles" id="rpTiles"></div>';
+      page.appendChild(summaryCard);
+
+      var statusCard = el('section', 'card');
+      statusCard.innerHTML =
+        '<h2>Requests by Status</h2>' +
+        '<div class="table-wrap"><table><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody id="rpStatusBody"></tbody></table></div>';
+      page.appendChild(statusCard);
+
+      var vehicleCard = el('section', 'card');
+      vehicleCard.innerHTML =
+        '<h2>Vehicle Utilization</h2>' +
+        '<div class="table-wrap"><table><thead><tr><th>Vehicle</th><th>Total Trips</th><th>Completed</th><th>Cancelled</th></tr></thead><tbody id="rpVehicleBody"></tbody></table></div>';
+      page.appendChild(vehicleCard);
+
+      var driverCard = el('section', 'card');
+      driverCard.innerHTML =
+        '<h2>Driver Utilization</h2>' +
+        '<div class="table-wrap"><table><thead><tr><th>Driver</th><th>Total Trips</th><th>Completed</th><th>Cancelled</th></tr></thead><tbody id="rpDriverBody"></tbody></table></div>';
+      page.appendChild(driverCard);
+
+      var requestsCard = el('section', 'card');
+      requestsCard.innerHTML =
+        '<h2>Requests in Range</h2>' +
+        '<div class="table-wrap"><table><thead><tr><th>Request ID</th><th>Required Date</th><th>Requested By</th><th>Department</th><th>Route</th><th>Status</th></tr></thead><tbody id="rpRequestsBody"></tbody></table></div>';
+      page.appendChild(requestsCard);
+
+      function renderTiles(summary) {
+        var tiles = document.getElementById('rpTiles');
+        tiles.textContent = '';
+        [
+          { label: 'Total Requests', value: summary.totalRequests },
+          { label: 'Pending', value: summary.pending },
+          { label: 'Completed', value: summary.completed },
+          { label: 'Cancelled', value: summary.cancelled },
+          { label: 'Rejected', value: summary.rejected },
+          { label: 'Total Allocations', value: summary.totalAllocations }
+        ].forEach(function (it) {
+          var tile = el('div', 'tile');
+          tile.appendChild(el('div', 'tile-value', String(it.value)));
+          tile.appendChild(el('div', 'tile-label', it.label));
+          tiles.appendChild(tile);
+        });
+      }
+
+      function renderStatusTable(rows) {
+        var body = document.getElementById('rpStatusBody');
+        body.textContent = '';
+        rows.forEach(function (r) {
+          var tr = document.createElement('tr');
+          addStatusCell(tr, r.status, requestStatusClass(r.status));
+          addCellText(tr, String(r.count));
+          body.appendChild(tr);
+        });
+      }
+
+      function renderUtilTable(bodyId, rows) {
+        var body = document.getElementById(bodyId);
+        body.textContent = '';
+        if (rows.length === 0) {
+          var tr = document.createElement('tr');
+          addCellText(tr, 'No data for this range.');
+          body.appendChild(tr);
+          return;
+        }
+        rows.forEach(function (r) {
+          var row = document.createElement('tr');
+          addCellText(row, r.label);
+          addCellText(row, String(r.total));
+          addCellText(row, String(r.completed));
+          addCellText(row, String(r.cancelled));
+          body.appendChild(row);
+        });
+      }
+
+      function renderRequestsTableSimple(rows) {
+        var body = document.getElementById('rpRequestsBody');
+        body.textContent = '';
+        if (rows.length === 0) {
+          var tr = document.createElement('tr');
+          addCellText(tr, 'No requests in this range.');
+          body.appendChild(tr);
+          return;
+        }
+        rows.forEach(function (r) {
+          var row = document.createElement('tr');
+          addCellText(row, r.requestId);
+          addCellText(row, r.requiredDate);
+          addCellText(row, r.requestedByName);
+          addCellText(row, r.departmentName || '-');
+          addCellText(row, r.fromLocationName + ' \u2192 ' + r.toLocationName);
+          addStatusCell(row, r.status, requestStatusClass(r.status));
+          body.appendChild(row);
+        });
+      }
+
+      function load() {
+        var msg = document.getElementById('rpMsg');
+        msg.textContent = 'Loading...';
+        msg.className = 'msg';
+
+        var payload = {
+          fromDate: document.getElementById('rpFrom').value,
+          toDate: document.getElementById('rpTo').value
+        };
+
+        callBackend('getReportsData', [state.token, payload], document.getElementById('rpApplyBtn'),
+          function (res) {
+            msg.textContent = '';
+            renderTiles(res.data.summary);
+            renderStatusTable(res.data.requestsByStatus);
+            renderUtilTable('rpVehicleBody', res.data.vehicleUtilization);
+            renderUtilTable('rpDriverBody', res.data.driverUtilization);
+            renderRequestsTableSimple(res.data.requests);
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            msg.textContent = err;
+            msg.className = 'msg bad';
+          });
+      }
+
+      document.getElementById('rpApplyBtn').addEventListener('click', load);
+      document.getElementById('rpResetBtn').addEventListener('click', function () {
+        document.getElementById('rpFrom').value = '';
+        document.getElementById('rpTo').value = '';
+        load();
+      });
+
+      load();
+    }
+
+    // ---------- Sign in / out ----------
+
+    function doLogin() {
+      var identifier = document.getElementById('identifier').value.trim();
+      var password = document.getElementById('password').value;
+      var msg = document.getElementById('loginMsg');
+      var btn = document.getElementById('loginBtn');
+
+      if (!identifier || !password) {
+        msg.textContent = 'Enter your Email or Employee Code, and your password.';
+        return;
+      }
+
+      msg.textContent = '';
+      btn.textContent = 'Signing in...';
+
+      callBackend('login', [identifier, password], btn,
+        function (res) {
+          btn.textContent = 'Sign in';
+          state.token = res.data.token;
+          saveToken(res.data.token);
+          document.getElementById('password').value = '';
+          showApp(res.data.user, res.data.menu);
+        },
+        function (err) {
+          btn.textContent = 'Sign in';
+          msg.textContent = err;
+        });
+    }
+
+    function doLogout() {
+      var token = state.token;
+      showLogin('You have signed out.');
+      if (token) {
+        callBackend('logout', [token], null, function () {}, function () {});
+      }
+    }
+
+    // ---------- Start ----------
+
+    function start() {
+      var token = loadToken();
+      if (!token) {
+        showLogin('');
+        return;
+      }
+
+      showOnly('start');
+      callBackend('getCurrentUser', [token], null,
+        function (res) {
+          state.token = token;
+          showApp(res.data.user, res.data.menu);
+        },
+        function () {
+          showLogin('Your session has ended. Please sign in again.');
+        });
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', doLogin);
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('collapseBtn').addEventListener('click', toggleCollapse);
+    document.getElementById('viewCloseBtn').addEventListener('click', closeRequestView);
+    document.getElementById('allocCloseBtn').addEventListener('click', closeAllocateModal);
+    document.getElementById('allocCancelBtn').addEventListener('click', closeAllocateModal);
+    document.getElementById('allocSaveBtn').addEventListener('click', submitAllocation);
+    document.getElementById('timelineCloseBtn').addEventListener('click', closeRequestTimeline);
+    document.getElementById('allocateOverlay').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closeAllocateModal();
+    });
+    document.getElementById('viewOverlay').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closeRequestView();
+    });
+    document.getElementById('timelineOverlay').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closeRequestTimeline();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (!document.getElementById('viewOverlay').hidden) closeRequestView();
+      if (!document.getElementById('allocateOverlay').hidden) closeAllocateModal();
+      if (!document.getElementById('timelineOverlay').hidden) closeRequestTimeline();
+    });
+    document.getElementById('password').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('identifier').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    start();
+  </script>
+</body>
+</html>
