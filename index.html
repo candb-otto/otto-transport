@@ -245,6 +245,12 @@
 
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 16px; margin-top: 4px; }
     .form-grid label { margin: 10px 0 4px; }
+    .form-grid select, .form-grid input[type="number"], .form-grid input[type="date"], .form-grid input[type="time"], .form-grid input[type="datetime-local"] {
+      width: 100%; padding: 9px 10px; font-size: 1rem; font-family: inherit;
+      border: 1px solid #c3c9cf; border-radius: 6px; background: #fff; color: var(--ink);
+    }
+    .form-grid select:disabled { background: #f1f3f5; color: var(--muted); }
+    .form-grid select:focus-visible { outline: 3px solid var(--marking); outline-offset: 1px; border-color: var(--primary); }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
     .table-wrap { overflow-x: auto; margin-top: 4px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
@@ -1680,11 +1686,11 @@
         '<h2 id="vfTitle">Add Vehicle</h2>' +
         '<div class="form-grid">' +
           '<div><label for="vfVehicleNo">Vehicle No</label><input id="vfVehicleNo" type="text"></div>' +
-          '<div><label for="vfType">Type</label><input id="vfType" type="text"></div>' +
+          '<div><label for="vfType">Type</label><select id="vfType"></select></div>' +
           '<div><label for="vfSubType">Sub Type (optional)</label><input id="vfSubType" type="text"></div>' +
           '<div><label for="vfCapacity">Capacity</label><input id="vfCapacity" type="number" min="1" step="1"></div>' +
-          '<div><label for="vfLocation">Current Location</label><input id="vfLocation" type="text"></div>' +
-          '<div><label for="vfStatus">Status</label><select id="vfStatus"></select></div>' +
+          '<div><label for="vfLocation">Current Location (optional)</label><select id="vfLocation"></select></div>' +
+          '<div><label for="vfStatus">Status</label><select id="vfStatus"></select><p class="hint" id="vfStatusHint" hidden>A new vehicle always starts as Available.</p></div>' +
           '<div><label for="vfActiveFrom">Active From (optional)</label><input id="vfActiveFrom" type="date"></div>' +
           '<div><label for="vfRemarks">Remarks (optional)</label><input id="vfRemarks" type="text"></div>' +
         '</div>' +
@@ -1707,6 +1713,30 @@
 
       var vehiclesCache = [];
       var statusesCache = [];
+      var typesCache = [];
+      var locationsCache = [];
+
+      // Fills a dropdown from a list of names. If the record already holds a
+      // value that is no longer in the list, it is kept as an extra choice so
+      // editing an older vehicle never loses its current value.
+      function fillNameSelect(select, names, currentValue, placeholder) {
+        select.textContent = '';
+        if (placeholder !== null) {
+          var blank = document.createElement('option');
+          blank.value = '';
+          blank.textContent = placeholder;
+          select.appendChild(blank);
+        }
+        var list = names.slice();
+        if (currentValue && list.indexOf(currentValue) < 0) list.push(currentValue);
+        list.forEach(function (n) {
+          var opt = document.createElement('option');
+          opt.value = n;
+          opt.textContent = n;
+          select.appendChild(opt);
+        });
+        select.value = currentValue || '';
+      }
 
       function fillStatusSelect(select) {
         select.textContent = '';
@@ -1724,15 +1754,18 @@
         formCard.setAttribute('data-editing-id', editing ? vehicleOrNull.vehicleId : '');
 
         document.getElementById('vfVehicleNo').value = editing ? vehicleOrNull.vehicleNo : '';
-        document.getElementById('vfType').value = editing ? vehicleOrNull.type : '';
+        fillNameSelect(document.getElementById('vfType'), typesCache, editing ? vehicleOrNull.type : '', 'Select a type');
         document.getElementById('vfSubType').value = editing ? vehicleOrNull.subType : '';
         document.getElementById('vfCapacity').value = editing ? vehicleOrNull.capacity : '';
-        document.getElementById('vfLocation').value = editing ? vehicleOrNull.currentLocation : '';
+        fillNameSelect(document.getElementById('vfLocation'), locationsCache, editing ? vehicleOrNull.currentLocation : '', 'Select a location');
         document.getElementById('vfRemarks').value = editing ? vehicleOrNull.remarks : '';
         document.getElementById('vfActiveFrom').value = editing ? toIsoDateForInput_(vehicleOrNull.activeFrom) : '';
 
         fillStatusSelect(document.getElementById('vfStatus'));
         document.getElementById('vfStatus').value = editing ? vehicleOrNull.status : 'Available';
+        // New vehicle: Status is fixed to Available. Editing: it can be changed.
+        document.getElementById('vfStatus').disabled = !editing;
+        document.getElementById('vfStatusHint').hidden = editing;
 
         var msg = document.getElementById('vfMsg');
         msg.textContent = '';
@@ -1827,6 +1860,8 @@
           function (res) {
             vehiclesCache = res.data.vehicles;
             statusesCache = res.data.statuses;
+            typesCache = res.data.types || [];
+            locationsCache = res.data.locations || [];
             stamp.textContent = vehiclesCache.length + (vehiclesCache.length === 1 ? ' vehicle' : ' vehicles');
             fillSelect(document.getElementById('vehiclesStatusFilter'), statusesCache, null, null, 'All Statuses');
             applyFilters();
