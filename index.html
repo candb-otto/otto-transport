@@ -175,6 +175,16 @@
       border-bottom: 1px solid var(--border);
     }
     .topbar h1 { margin: 0; font-size: 1.2rem; flex: 1; color: var(--ink); }
+
+    /* ---------- Logos ----------
+       client-logo.png and powered-by-logo.png sit next to index.html on GitHub.
+       If a file is missing, its spot simply hides itself. */
+    .login-logo { display: block; margin: 0 auto 18px; max-width: 240px; max-height: 80px; width: auto; height: auto; }
+    .powered-by { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; color: var(--muted); font-size: 0.8rem; }
+    .powered-by img { max-width: 130px; max-height: 26px; width: auto; height: auto; }
+    .topbar-logo { max-width: 140px; max-height: 34px; width: auto; height: auto; padding-right: 14px; border-right: 1px solid var(--border); }
+    @media (max-width: 700px) { .topbar-logo { max-width: 90px; max-height: 26px; padding-right: 10px; } }
+    @media (max-width: 520px) { .topbar-logo { display: none; } }
     .who { display: flex; align-items: center; gap: 12px; }
     .who-text { text-align: right; line-height: 1.25; }
     .who-name { font-weight: 600; }
@@ -401,6 +411,7 @@
 
   <!-- Sign in -->
   <div id="loginView" class="login-wrap" hidden>
+    <img src="client-logo.png" alt="Company logo" class="login-logo" onerror="this.hidden=true">
     <section class="card">
       <h2>Otto Transport System</h2>
       <p class="hint">Sign in with your Email or Employee Code.</p>
@@ -414,6 +425,10 @@
       <button type="button" id="loginBtn" class="wide">Sign in</button>
       <p class="msg bad" id="loginMsg" role="alert"></p>
     </section>
+    <div class="powered-by">
+      <span>Powered by</span>
+      <img src="powered-by-logo.png" alt="Powered by logo" onerror="this.parentNode.hidden=true">
+    </div>
   </div>
 
   <!-- Signed in -->
@@ -437,6 +452,7 @@
 
     <div class="content">
       <div class="topbar">
+        <img src="client-logo.png" alt="Company logo" class="topbar-logo" onerror="this.hidden=true">
         <h1 id="pageTitle">Dashboard</h1>
         <div class="who">
           <div class="notif-wrap">
