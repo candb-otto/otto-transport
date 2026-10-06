@@ -358,6 +358,16 @@
       padding: 20px;
     }
     .view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .view-card.wide-card { max-width: 760px; }
+    .pw-btn { display: inline-flex; align-items: center; gap: 6px; }
+    #logoutBtn, .pw-btn { white-space: nowrap; }
+    @media (max-width: 520px) {
+      .pw-btn .pw-label { display: none; }
+      #logoutBtn, .pw-btn { padding: 8px 10px; }
+      .topbar { gap: 8px; padding-left: 12px; padding-right: 12px; }
+      .who { gap: 6px; }
+      .topbar h1 { font-size: 1.05rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
     .view-head h2 { margin: 0; font-size: 1.1rem; }
     .view-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--border); }
     .view-row .label { color: var(--muted); flex: 0 0 auto; }
@@ -475,6 +485,13 @@
             <div class="who-name" id="whoName"></div>
             <div class="who-role" id="whoRole"></div>
           </div>
+          <button type="button" id="pwBtn" class="outline pw-btn" title="Change password" aria-label="Change password">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+            </svg>
+            <span class="pw-label">Password</span>
+          </button>
           <button type="button" id="logoutBtn" class="outline">Sign out</button>
         </div>
       </div>
@@ -522,6 +539,68 @@
         <button type="button" id="allocCancelBtn" class="outline">Cancel</button>
       </div>
       <p class="msg" id="allocMsg"></p>
+    </div>
+  </div>
+
+  <!-- Admin: add or edit a GV Request -->
+  <div class="view-overlay" id="gvFormOverlay" hidden>
+    <div class="view-card wide-card" role="dialog" aria-modal="true" aria-labelledby="gfTitle">
+      <div class="view-head">
+        <h2 id="gfTitle">New GV Request</h2>
+        <button type="button" id="gfCloseBtn" class="icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="form-grid">
+        <div><label for="gfRequestedBy">Requested By</label><select id="gfRequestedBy"></select></div>
+        <div><label for="gfPurpose">Purpose</label><input id="gfPurpose" type="text"></div>
+        <div><label for="gfFrom">From Location</label><select id="gfFrom"></select></div>
+        <div><label for="gfTo">To Location</label><select id="gfTo"></select></div>
+        <div><label for="gfDate">Required Date</label><input id="gfDate" type="date"></div>
+        <div><label for="gfTime">Required Time</label><input id="gfTime" type="time"></div>
+        <div><label for="gfType">Vehicle Type</label><select id="gfType"></select></div>
+        <div><label for="gfSubType">Vehicle Sub Type (optional)</label><input id="gfSubType" type="text"></div>
+        <div><label for="gfCapacity">Passenger / Load Count</label><input id="gfCapacity" type="number" min="1" step="1"></div>
+        <div><label for="gfPriority">Priority</label><select id="gfPriority"></select></div>
+        <div><label for="gfGoods">Goods Description (optional)</label><input id="gfGoods" type="text"></div>
+        <div><label for="gfRemarks">Remarks (optional)</label><input id="gfRemarks" type="text"></div>
+      </div>
+      <p class="hint" id="gfHint"></p>
+      <div class="actions">
+        <button type="button" id="gfSaveBtn">Save</button>
+        <button type="button" id="gfCancelBtn" class="outline">Cancel</button>
+      </div>
+      <p class="msg" id="gfMsg"></p>
+    </div>
+  </div>
+
+  <!-- Change my password (every role) -->
+  <div class="view-overlay" id="pwOverlay" hidden>
+    <div class="view-card" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+      <div class="view-head">
+        <h2 id="pwTitle">Change Password</h2>
+        <button type="button" id="pwCloseBtn" class="icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <label for="pwCurrent">Current Password</label>
+      <input type="password" id="pwCurrent" autocomplete="current-password">
+      <label for="pwNew">New Password</label>
+      <input type="password" id="pwNew" autocomplete="new-password">
+      <label for="pwConfirm">Confirm New Password</label>
+      <input type="password" id="pwConfirm" autocomplete="new-password">
+      <p class="hint">At least 6 characters.</p>
+      <div class="actions">
+        <button type="button" id="pwSaveBtn">Change Password</button>
+        <button type="button" id="pwCancelBtn" class="outline">Cancel</button>
+      </div>
+      <p class="msg" id="pwMsg" role="alert"></p>
     </div>
   </div>
 
@@ -2125,6 +2204,179 @@
       return yyyy + '-' + mm + '-' + dd + 'T' + hh + ':' + mi;
     }
 
+    // ---------- Admin: add / edit GV Request modal ----------
+
+    var gvFormContext = { requestId: null, onDone: null };
+
+    // "02:30 PM" (how RequiredTime is stored) -> "14:30" for a time box.
+    function to24ForInput_(value) {
+      var m = String(value || '').trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (!m) return '';
+      var h = parseInt(m[1], 10);
+      var suffix = (m[3] || '').toUpperCase();
+      if (suffix === 'PM' && h !== 12) h += 12;
+      if (suffix === 'AM' && h === 12) h = 0;
+      return (h < 10 ? '0' + h : String(h)) + ':' + m[2];
+    }
+
+    // Adds the record's current value to a dropdown if the list no longer has it.
+    function ensureOption_(select, value, label) {
+      if (!value) return;
+      for (var i = 0; i < select.options.length; i++) if (select.options[i].value === value) return;
+      select.appendChild(new Option(label || value, value));
+    }
+
+    function openGvForm(r, onDone) {
+      var editing = !!r;
+      gvFormContext.requestId = editing ? r.requestId : null;
+      gvFormContext.onDone = onDone;
+
+      document.getElementById('gfTitle').textContent = editing ? 'Edit ' + r.requestId : 'New GV Request';
+      document.getElementById('gfHint').textContent = editing
+        ? 'Requested By cannot be changed. A request can only be edited until it is allocated.'
+        : 'The request is raised for the selected user and uses their department.';
+      var msg = document.getElementById('gfMsg');
+      msg.textContent = 'Loading...';
+      msg.className = 'msg';
+
+      ['gfPurpose', 'gfDate', 'gfTime', 'gfSubType', 'gfCapacity', 'gfGoods', 'gfRemarks'].forEach(function (id) {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('gfSaveBtn').disabled = true;
+      document.getElementById('gvFormOverlay').hidden = false;
+
+      callBackend('getAdminGvRequestOptions', [state.token], null,
+        function (res) {
+          var d = res.data;
+          var reqSel = document.getElementById('gfRequestedBy');
+          fillSelect(reqSel, d.requesters, 'id', 'label', 'Select a user');
+          fillSelect(document.getElementById('gfFrom'), d.locations, 'id', 'name', 'Select a location');
+          fillSelect(document.getElementById('gfTo'), d.locations, 'id', 'name', 'Select a location');
+          fillSelect(document.getElementById('gfType'), d.vehicleTypes, null, null, 'Select a vehicle type');
+          fillSelect(document.getElementById('gfPriority'), d.priorities, null, null, null);
+
+          if (editing) {
+            ensureOption_(reqSel, r.requestedById, r.requestedByName);
+            reqSel.value = r.requestedById;
+            reqSel.disabled = true;
+            ensureOption_(document.getElementById('gfFrom'), r.fromLocationId, r.fromLocationName);
+            ensureOption_(document.getElementById('gfTo'), r.toLocationId, r.toLocationName);
+            ensureOption_(document.getElementById('gfType'), r.requiredType);
+            document.getElementById('gfFrom').value = r.fromLocationId;
+            document.getElementById('gfTo').value = r.toLocationId;
+            document.getElementById('gfType').value = r.requiredType;
+            document.getElementById('gfPurpose').value = r.purpose || '';
+            document.getElementById('gfDate').value = toIsoDateForInput_(r.requiredDate);
+            document.getElementById('gfTime').value = to24ForInput_(r.requiredTime);
+            document.getElementById('gfSubType').value = r.requiredSubType || '';
+            document.getElementById('gfCapacity').value = r.requiredCapacity || '';
+            document.getElementById('gfPriority').value = r.priority || 'Normal';
+            document.getElementById('gfGoods').value = r.goodsDescription || '';
+            document.getElementById('gfRemarks').value = r.remarks || '';
+          } else {
+            reqSel.disabled = false;
+            document.getElementById('gfPriority').value = 'Normal';
+          }
+          msg.textContent = '';
+          if (!editing && d.requesters.length === 0) {
+            msg.textContent = 'There are no active GV users to raise a request for.';
+            msg.className = 'msg bad';
+          }
+          document.getElementById('gfSaveBtn').disabled = false;
+        },
+        function (err) {
+          if (isSessionError(err)) { closeGvForm(); showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        });
+    }
+
+    function closeGvForm() {
+      document.getElementById('gvFormOverlay').hidden = true;
+    }
+
+    function submitGvForm() {
+      var msg = document.getElementById('gfMsg');
+      var btn = document.getElementById('gfSaveBtn');
+      msg.textContent = '';
+      msg.className = 'msg';
+
+      var payload = {
+        purpose: document.getElementById('gfPurpose').value.trim(),
+        fromLocationId: document.getElementById('gfFrom').value,
+        toLocationId: document.getElementById('gfTo').value,
+        requiredDate: document.getElementById('gfDate').value,
+        requiredTime: document.getElementById('gfTime').value,
+        requiredType: document.getElementById('gfType').value,
+        requiredSubType: document.getElementById('gfSubType').value.trim(),
+        requiredCapacity: document.getElementById('gfCapacity').value.trim(),
+        priority: document.getElementById('gfPriority').value,
+        goodsDescription: document.getElementById('gfGoods').value.trim(),
+        remarks: document.getElementById('gfRemarks').value.trim()
+      };
+
+      function done() {
+        closeGvForm();
+        if (gvFormContext.onDone) gvFormContext.onDone();
+      }
+      function onErr(err) {
+        if (isSessionError(err)) { closeGvForm(); showLogin(err); return; }
+        msg.textContent = err;
+        msg.className = 'msg bad';
+      }
+
+      if (gvFormContext.requestId) {
+        payload.requestId = gvFormContext.requestId;
+        callBackend('updateGvRequest', [state.token, payload], btn, done, onErr);
+      } else {
+        payload.requestedBy = document.getElementById('gfRequestedBy').value;
+        callBackend('adminCreateGvRequest', [state.token, payload], btn, done, onErr);
+      }
+    }
+
+    // ---------- Change my password (every role) ----------
+
+    function openPasswordModal() {
+      ['pwCurrent', 'pwNew', 'pwConfirm'].forEach(function (id) { document.getElementById(id).value = ''; });
+      var msg = document.getElementById('pwMsg');
+      msg.textContent = '';
+      msg.className = 'msg';
+      document.getElementById('pwSaveBtn').disabled = false;
+      document.getElementById('pwOverlay').hidden = false;
+      document.getElementById('pwCurrent').focus();
+    }
+
+    function closePasswordModal() {
+      document.getElementById('pwOverlay').hidden = true;
+    }
+
+    function submitPasswordChange() {
+      var msg = document.getElementById('pwMsg');
+      var btn = document.getElementById('pwSaveBtn');
+      var current = document.getElementById('pwCurrent').value;
+      var next = document.getElementById('pwNew').value;
+      var confirmPw = document.getElementById('pwConfirm').value;
+      msg.className = 'msg bad';
+
+      if (!current || !next || !confirmPw) { msg.textContent = 'Fill in all three password boxes.'; return; }
+      if (next.length < 6) { msg.textContent = 'New password must be at least 6 characters.'; return; }
+      if (next !== confirmPw) { msg.textContent = 'New password and Confirm password do not match.'; return; }
+      msg.textContent = '';
+
+      callBackend('changeMyPassword', [state.token, { currentPassword: current, newPassword: next, confirmPassword: confirmPw }], btn,
+        function () {
+          msg.textContent = 'Password changed. Use the new password next time you sign in.';
+          msg.className = 'msg ok';
+          btn.disabled = true;
+          setTimeout(closePasswordModal, 1800);
+        },
+        function (err) {
+          if (isSessionError(err)) { closePasswordModal(); showLogin(err); return; }
+          msg.textContent = err;
+          msg.className = 'msg bad';
+        });
+    }
+
     // ---------- Allocate modal ----------
 
     var allocContext = { requestId: null, onDone: null };
@@ -2453,6 +2705,12 @@
           actionsTd.appendChild(rejectBtn);
         }
 
+        if (opts.allowEdit && r.editable) {
+          var editReqBtn = actionBtn_('edit', 'Edit');
+          editReqBtn.addEventListener('click', function () { openGvForm(r, onChanged); });
+          actionsTd.appendChild(editReqBtn);
+        }
+
         if (opts.allowAllocate && r.allocatable) {
           var allocBtn = actionBtn_('allocate', 'Allocate');
           allocBtn.addEventListener('click', function () { openAllocateModal(r, onChanged); });
@@ -2683,6 +2941,13 @@
       var head = el('div', 'page-head');
       var stamp = el('span', 'stamp', '');
       head.appendChild(stamp);
+      // Admin's GV Requests page: Admin can raise a request for a GV user
+      if (!pendingOnly && state.user && state.user.role === 'Admin') {
+        var newReqBtn = el('button', 'outline', 'New Request');
+        newReqBtn.type = 'button';
+        newReqBtn.addEventListener('click', function () { openGvForm(null, load); });
+        head.appendChild(newReqBtn);
+      }
       page.appendChild(head);
 
       var listCard = el('section', 'card');
@@ -2721,7 +2986,8 @@
         var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
         reqListCurrentFiltered = filtered;
         renderRequestsTable(document.getElementById('reqListBody'), filtered,
-          { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true }, load);
+          { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true,
+            allowEdit: !pendingOnly && state.user && state.user.role === 'Admin' }, load);
       }
 
       function distinctStatuses_(rows) {
@@ -3129,6 +3395,22 @@
     document.getElementById('allocCancelBtn').addEventListener('click', closeAllocateModal);
     document.getElementById('allocSaveBtn').addEventListener('click', submitAllocation);
     document.getElementById('timelineCloseBtn').addEventListener('click', closeRequestTimeline);
+    document.getElementById('gfCloseBtn').addEventListener('click', closeGvForm);
+    document.getElementById('gfCancelBtn').addEventListener('click', closeGvForm);
+    document.getElementById('gfSaveBtn').addEventListener('click', submitGvForm);
+    document.getElementById('gvFormOverlay').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closeGvForm();
+    });
+    document.getElementById('pwBtn').addEventListener('click', openPasswordModal);
+    document.getElementById('pwCloseBtn').addEventListener('click', closePasswordModal);
+    document.getElementById('pwCancelBtn').addEventListener('click', closePasswordModal);
+    document.getElementById('pwSaveBtn').addEventListener('click', submitPasswordChange);
+    document.getElementById('pwConfirm').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') submitPasswordChange();
+    });
+    document.getElementById('pwOverlay').addEventListener('click', function (e) {
+      if (e.target === e.currentTarget) closePasswordModal();
+    });
     document.getElementById('allocateOverlay').addEventListener('click', function (e) {
       if (e.target === e.currentTarget) closeAllocateModal();
     });
@@ -3143,6 +3425,8 @@
       if (!document.getElementById('viewOverlay').hidden) closeRequestView();
       if (!document.getElementById('allocateOverlay').hidden) closeAllocateModal();
       if (!document.getElementById('timelineOverlay').hidden) closeRequestTimeline();
+      if (!document.getElementById('gvFormOverlay').hidden) closeGvForm();
+      if (!document.getElementById('pwOverlay').hidden) closePasswordModal();
     });
     document.getElementById('password').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') doLogin();
