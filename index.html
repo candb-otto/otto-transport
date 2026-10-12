@@ -268,6 +268,7 @@
     .pager .pager-btns { display: flex; align-items: center; gap: 8px; }
     .pager button { font: inherit; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--primary-ink); cursor: pointer; }
     .pager button:hover:not(:disabled) { background: var(--primary-tint); }
+    .pager button.pager-active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
     .pager button:disabled { color: var(--muted); opacity: .5; cursor: default; }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     th, td { text-align: left; padding: 9px 10px; border-top: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
@@ -762,13 +763,31 @@
       if (pages > 1) {
         var btns = document.createElement('div');
         btns.className = 'pager-btns';
-        var prev = document.createElement('button');
-        prev.type = 'button'; prev.textContent = '\u2039 Previous'; prev.disabled = page <= 1;
-        prev.addEventListener('click', function () { pageState_[bodyId] = page - 1; pagedRender_(bodyId, rows, renderFn, allCount); });
-        var next = document.createElement('button');
-        next.type = 'button'; next.textContent = 'Next \u203A'; next.disabled = page >= pages;
-        next.addEventListener('click', function () { pageState_[bodyId] = page + 1; pagedRender_(bodyId, rows, renderFn, allCount); });
-        btns.appendChild(prev); btns.appendChild(next);
+        function goTo(n) { pageState_[bodyId] = n; pagedRender_(bodyId, rows, renderFn, allCount); }
+        function mk(label, n, disabled, active) {
+          var bt = document.createElement('button');
+          bt.type = 'button'; bt.textContent = label; bt.disabled = !!disabled;
+          if (active) bt.className = 'pager-active';
+          bt.addEventListener('click', function () { goTo(n); });
+          btns.appendChild(bt);
+        }
+        mk('\u2039 Previous', page - 1, page <= 1);
+        // Numbered buttons: first, last, and a window around the current page.
+        var shown = [];
+        for (var n = 1; n <= pages; n++) {
+          if (n === 1 || n === pages || Math.abs(n - page) <= 1) shown.push(n);
+        }
+        var last = 0;
+        shown.forEach(function (n) {
+          if (last && n - last > 1) {
+            var gap = document.createElement('span');
+            gap.textContent = '\u2026';
+            btns.appendChild(gap);
+          }
+          mk(String(n), n, false, n === page);
+          last = n;
+        });
+        mk('Next \u203A', page + 1, page >= pages);
         foot.appendChild(btns);
       }
     }
