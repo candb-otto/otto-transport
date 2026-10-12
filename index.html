@@ -263,6 +263,12 @@
     .form-grid select:focus-visible { outline: 3px solid var(--marking); outline-offset: 1px; border-color: var(--primary); }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
     .table-wrap { overflow-x: auto; margin-top: 4px; }
+    .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 2px 2px; font-size: 13px; color: var(--muted); }
+    .pager .pager-info b { color: var(--ink); }
+    .pager .pager-btns { display: flex; align-items: center; gap: 8px; }
+    .pager button { font: inherit; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--primary-ink); cursor: pointer; }
+    .pager button:hover:not(:disabled) { background: var(--primary-tint); }
+    .pager button:disabled { color: var(--muted); opacity: .5; cursor: default; }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
     th, td { text-align: left; padding: 9px 10px; border-top: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
     th { color: var(--muted); font-weight: 600; }
@@ -714,6 +720,57 @@
         if (exactValue && row[exactField] !== exactValue) return false;
         return textMatches_(row, searchLower, fields);
       });
+    }
+
+    // ---- Paging (10 rows per page) shared by every list page ----
+    var PAGE_SIZE = 10;
+    var pageState_ = {};
+    function resetPage_(bodyId) { pageState_[bodyId] = 1; }
+
+    // Renders one page of `rows` by calling renderFn(pageRows), then draws a
+    // footer under the table: "Page 1 of 5", Previous/Next, and the total
+    // row count ("Total: 12 of 48" when a search/filter is active; allCount
+    // is the unfiltered count).
+    function pagedRender_(bodyId, rows, renderFn, allCount) {
+      var total = rows.length;
+      var pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      var page = pageState_[bodyId] || 1;
+      if (page > pages) page = pages;
+      if (page < 1) page = 1;
+      pageState_[bodyId] = page;
+      renderFn(rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE));
+
+      var body = document.getElementById(bodyId);
+      if (!body) return;
+      var wrap = body.closest('.table-wrap');
+      if (!wrap) return;
+      var footId = bodyId + 'Pager';
+      var foot = document.getElementById(footId);
+      if (!foot) {
+        foot = document.createElement('div');
+        foot.id = footId;
+        foot.className = 'pager';
+        wrap.parentNode.insertBefore(foot, wrap.nextSibling);
+      }
+      foot.textContent = '';
+      var info = document.createElement('div');
+      info.className = 'pager-info';
+      var totalText = (allCount != null && allCount !== total)
+        ? total + ' of ' + allCount + ' rows' : total + (total === 1 ? ' row' : ' rows');
+      info.innerHTML = 'Page <b>' + page + '</b> of <b>' + pages + '</b> &nbsp;|&nbsp; Total: <b>' + totalText + '</b>';
+      foot.appendChild(info);
+      if (pages > 1) {
+        var btns = document.createElement('div');
+        btns.className = 'pager-btns';
+        var prev = document.createElement('button');
+        prev.type = 'button'; prev.textContent = '\u2039 Previous'; prev.disabled = page <= 1;
+        prev.addEventListener('click', function () { pageState_[bodyId] = page - 1; pagedRender_(bodyId, rows, renderFn, allCount); });
+        var next = document.createElement('button');
+        next.type = 'button'; next.textContent = 'Next \u203A'; next.disabled = page >= pages;
+        next.addEventListener('click', function () { pageState_[bodyId] = page + 1; pagedRender_(bodyId, rows, renderFn, allCount); });
+        btns.appendChild(prev); btns.appendChild(next);
+        foot.appendChild(btns);
+      }
     }
 
     function addCellText(tr, text, cls) {
@@ -1388,6 +1445,10 @@
       }
 
       function renderList(rows) {
+        pagedRender_('usersBody', rows, renderListPage, usersCache.length);
+      }
+
+      function renderListPage(rows) {
         var body = document.getElementById('usersBody');
         body.textContent = '';
         rows.forEach(function (u) {
@@ -1450,9 +1511,9 @@
       addBtn.addEventListener('click', function () { openForm(null); });
       document.getElementById('ufSaveBtn').addEventListener('click', saveForm);
       document.getElementById('ufCancelBtn').addEventListener('click', closeForm);
-      document.getElementById('usersSearch').addEventListener('input', applyFilters);
-      document.getElementById('usersRoleFilter').addEventListener('change', applyFilters);
-      document.getElementById('usersStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('usersSearch').addEventListener('input', function () { resetPage_('usersBody'); applyFilters(); });
+      document.getElementById('usersRoleFilter').addEventListener('change', function () { resetPage_('usersBody'); applyFilters(); });
+      document.getElementById('usersStatusFilter').addEventListener('change', function () { resetPage_('usersBody'); applyFilters(); });
 
       loadList();
     }
@@ -1547,6 +1608,10 @@
       }
 
       function renderList(rows) {
+        pagedRender_('deptBody', rows, renderListPage, deptCache.length);
+      }
+
+      function renderListPage(rows) {
         var body = document.getElementById('deptBody');
         body.textContent = '';
         rows.forEach(function (d) {
@@ -1597,8 +1662,8 @@
       addBtn.addEventListener('click', function () { openForm(null); });
       document.getElementById('dfSaveBtn').addEventListener('click', saveForm);
       document.getElementById('dfCancelBtn').addEventListener('click', closeForm);
-      document.getElementById('deptSearch').addEventListener('input', applyFilters);
-      document.getElementById('deptStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('deptSearch').addEventListener('input', function () { resetPage_('deptBody'); applyFilters(); });
+      document.getElementById('deptStatusFilter').addEventListener('change', function () { resetPage_('deptBody'); applyFilters(); });
 
       loadList();
     }
@@ -1702,6 +1767,10 @@
       }
 
       function renderList(rows) {
+        pagedRender_('locBody', rows, renderListPage, locCache.length);
+      }
+
+      function renderListPage(rows) {
         var body = document.getElementById('locBody');
         body.textContent = '';
         rows.forEach(function (l) {
@@ -1754,8 +1823,8 @@
       addBtn.addEventListener('click', function () { openForm(null); });
       document.getElementById('lfSaveBtn').addEventListener('click', saveForm);
       document.getElementById('lfCancelBtn').addEventListener('click', closeForm);
-      document.getElementById('locSearch').addEventListener('input', applyFilters);
-      document.getElementById('locStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('locSearch').addEventListener('input', function () { resetPage_('locBody'); applyFilters(); });
+      document.getElementById('locStatusFilter').addEventListener('change', function () { resetPage_('locBody'); applyFilters(); });
 
       loadList();
     }
@@ -1918,6 +1987,10 @@
       }
 
       function renderList(rows) {
+        pagedRender_('vehiclesBody', rows, renderListPage, vehiclesCache.length);
+      }
+
+      function renderListPage(rows) {
         var body = document.getElementById('vehiclesBody');
         body.textContent = '';
         rows.forEach(function (v) {
@@ -1971,8 +2044,8 @@
       addBtn.addEventListener('click', function () { openForm(null); });
       document.getElementById('vfSaveBtn').addEventListener('click', saveForm);
       document.getElementById('vfCancelBtn').addEventListener('click', closeForm);
-      document.getElementById('vehiclesSearch').addEventListener('input', applyFilters);
-      document.getElementById('vehiclesStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('vehiclesSearch').addEventListener('input', function () { resetPage_('vehiclesBody'); applyFilters(); });
+      document.getElementById('vehiclesStatusFilter').addEventListener('change', function () { resetPage_('vehiclesBody'); applyFilters(); });
 
       loadList();
     }
@@ -2111,6 +2184,10 @@
       }
 
       function renderList(rows) {
+        pagedRender_('driversBody', rows, renderListPage, driversCache.length);
+      }
+
+      function renderListPage(rows) {
         var body = document.getElementById('driversBody');
         body.textContent = '';
         rows.forEach(function (d) {
@@ -2161,8 +2238,8 @@
       addBtn.addEventListener('click', function () { openForm(null); });
       document.getElementById('dfSaveBtn').addEventListener('click', saveForm);
       document.getElementById('dfCancelBtn').addEventListener('click', closeForm);
-      document.getElementById('driversSearch').addEventListener('input', applyFilters);
-      document.getElementById('driversStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('driversSearch').addEventListener('input', function () { resetPage_('driversBody'); applyFilters(); });
+      document.getElementById('driversStatusFilter').addEventListener('change', function () { resetPage_('driversBody'); applyFilters(); });
 
       loadList();
     }
@@ -2900,8 +2977,10 @@
         var search = document.getElementById('myReqSearch').value;
         var status = document.getElementById('myReqStatusFilter').value;
         var filtered = filterRows_(myReqCache, search, ['requestId', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
-        renderRequestsTable(document.getElementById('myReqBody'), filtered,
-          { showRequester: false, allowCancel: true, allowLoadingActions: true }, load);
+        pagedRender_('myReqBody', filtered, function (pageRows) {
+          renderRequestsTable(document.getElementById('myReqBody'), pageRows,
+            { showRequester: false, allowCancel: true, allowLoadingActions: true }, load);
+        }, myReqCache.length);
       }
 
       function distinctStatuses_(rows) {
@@ -2926,8 +3005,8 @@
           });
       }
 
-      document.getElementById('myReqSearch').addEventListener('input', applyFilters);
-      document.getElementById('myReqStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('myReqSearch').addEventListener('input', function () { resetPage_('myReqBody'); applyFilters(); });
+      document.getElementById('myReqStatusFilter').addEventListener('change', function () { resetPage_('myReqBody'); applyFilters(); });
 
       load();
     }
@@ -2985,9 +3064,11 @@
         var status = statusEl ? statusEl.value : '';
         var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
         reqListCurrentFiltered = filtered;
-        renderRequestsTable(document.getElementById('reqListBody'), filtered,
-          { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true,
-            allowEdit: !pendingOnly && state.user && state.user.role === 'Admin' }, load);
+        pagedRender_('reqListBody', filtered, function (pageRows) {
+          renderRequestsTable(document.getElementById('reqListBody'), pageRows,
+            { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true,
+              allowEdit: !pendingOnly && state.user && state.user.role === 'Admin' }, load);
+        }, baseRows.length);
       }
 
       function distinctStatuses_(rows) {
@@ -3015,9 +3096,9 @@
           });
       }
 
-      document.getElementById('reqListSearch').addEventListener('input', applyFilters);
+      document.getElementById('reqListSearch').addEventListener('input', function () { resetPage_('reqListBody'); applyFilters(); });
       var reqListStatusFilterEl = document.getElementById('reqListStatusFilter');
-      if (reqListStatusFilterEl) reqListStatusFilterEl.addEventListener('change', applyFilters);
+      if (reqListStatusFilterEl) reqListStatusFilterEl.addEventListener('change', function () { resetPage_('reqListBody'); applyFilters(); });
 
       load();
     }
@@ -3096,6 +3177,10 @@
       }
 
       function renderAllocRows(rows) {
+        pagedRender_('allocListBody', rows, renderAllocPage, allocCache.length);
+      }
+
+      function renderAllocPage(rows) {
         var body = document.getElementById('allocListBody');
         body.textContent = '';
         rows.forEach(function (a) {
@@ -3164,8 +3249,8 @@
           });
       }
 
-      document.getElementById('allocSearch').addEventListener('input', applyFilters);
-      document.getElementById('allocStatusFilter').addEventListener('change', applyFilters);
+      document.getElementById('allocSearch').addEventListener('input', function () { resetPage_('allocListBody'); applyFilters(); });
+      document.getElementById('allocStatusFilter').addEventListener('change', function () { resetPage_('allocListBody'); applyFilters(); });
 
       load();
     }
@@ -3273,6 +3358,10 @@
       }
 
       function renderRequestsTableSimple(rows) {
+        pagedRender_('rpRequestsBody', rows, renderRequestsSimplePage, rows.length);
+      }
+
+      function renderRequestsSimplePage(rows) {
         var body = document.getElementById('rpRequestsBody');
         body.textContent = '';
         if (rows.length === 0) {
@@ -3294,6 +3383,7 @@
       }
 
       function load() {
+        resetPage_('rpRequestsBody');
         var msg = document.getElementById('rpMsg');
         msg.textContent = 'Loading...';
         msg.className = 'msg';
