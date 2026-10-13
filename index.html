@@ -339,7 +339,6 @@
       .shell { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr) !important; }
       .brand-text, .nav-item .label { display: none !important; }
       .nav-item { justify-content: center; padding: 10px; }
-      .collapseBtn { display: none; }
       .topbar { padding: 12px 16px; }
       .who-text { display: none; }
       #page { padding: 16px; }
@@ -417,6 +416,149 @@
     @media (prefers-reduced-motion: reduce) {
       .shell { transition: none; }
     }
+
+    /* ---------- Mobile menu drawer ---------- */
+    .sidebar { display: flex; flex-direction: column; }
+    .sidebar nav { flex: 1 1 auto; }
+    .sidebar-backdrop { display: none; }
+    .sidebar-powered {
+      margin-top: auto; padding: 14px 12px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      font-size: 0.72rem; color: var(--muted); text-align: center;
+    }
+    .sidebar-powered img { max-width: 150px; max-height: 38px; width: auto; height: auto; }
+    .shell.collapsed .sidebar-powered span { display: none; }
+    .shell.collapsed .sidebar-powered img { max-width: 46px; }
+    @media (max-width: 700px) {
+      .sidebar-powered span { display: none; }
+      .sidebar-powered img { max-width: 46px; }
+      .shell.mobile-open .sidebar {
+        width: var(--sidebar-w);
+        margin-right: calc(var(--sidebar-w-collapsed) - var(--sidebar-w));
+        z-index: 60;
+        box-shadow: 4px 0 18px rgba(0, 0, 0, 0.22);
+      }
+      .shell.mobile-open .sidebar-backdrop {
+        display: block; position: fixed; inset: 0; background: rgba(30, 34, 38, 0.45); z-index: 55;
+      }
+      .shell.mobile-open .brand-text { display: block !important; }
+      .shell.mobile-open .nav-item .label { display: block !important; }
+      .shell.mobile-open .nav-item { justify-content: flex-start !important; padding: 10px 12px !important; }
+      .shell.mobile-open .sidebar-powered span { display: block; }
+      .shell.mobile-open .sidebar-powered img { max-width: 150px; }
+    }
+
+    /* ---------- Extra list filters ---------- */
+    .filter-bar-extra { align-items: flex-end; }
+    .filter-field { display: flex; flex-direction: column; gap: 2px; }
+    .filter-field label { margin: 0; font-size: 0.74rem; font-weight: 600; color: var(--muted); }
+    .filter-field select, .filter-field input[type="date"] {
+      min-width: 150px; padding: 8px 10px; border: 1px solid #c3c9cf; border-radius: 6px;
+      font-family: inherit; font-size: 0.92rem; background: #fff; color: var(--ink);
+    }
+
+    /* ---------- Management Report (screen) ---------- */
+    :root { --mr-orange: #f8a51a; --mr-dark: #0b2014; --mr-tint: #e6f0e9; --mr-red: #c8433c; --mr-sage: #6f9c82; --mr-line: #d9dde3; }
+    .mr-controls-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .mr-export-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mr-quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .mr-quick button { padding: 7px 14px; }
+    .mr-quick button.mr-quick-on { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+    .mr-filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .mr-doc { margin-top: 12px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 20px; color: #1b1f23; }
+    .mr-title { text-align: center; font-weight: 700; font-size: 1.2rem; }
+    .mr-rule { height: 2px; background: var(--mr-orange); margin: 8px 0; }
+    .mr-rule.thick { height: 3px; }
+    .mr-filterbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--mr-tint); border-radius: 4px; padding: 8px 14px; margin-top: 10px; }
+    .mr-compare { text-align: center; font-size: 0.8rem; color: var(--muted); margin: 4px 0 6px; }
+    .mr-sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--mr-orange); margin: 22px 0 10px; padding-bottom: 4px; }
+    .mr-sec-head h3 { margin: 0; font-size: 1.02rem; font-weight: 800; }
+    .mr-sec-note { font-size: 0.8rem; color: var(--muted); }
+    .mr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+    .mr-kpi { border: 1px solid var(--mr-line); border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); background: #fff; }
+    .mr-kpi-label { font-size: 0.82rem; font-weight: 600; color: #4a5560; }
+    .mr-kpi-value { font-size: 1.9rem; font-weight: 800; margin: 2px 0; line-height: 1.15; }
+    .mr-delta { font-size: 0.8rem; font-weight: 600; }
+    .mr-delta.good { color: #1f7a4d; } .mr-delta.bad { color: var(--mr-red); } .mr-delta.neutral { color: var(--muted); }
+    .mr-kpi-note { font-size: 0.76rem; color: var(--muted); }
+    .mr-foot { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+    .mr-table-wrap { overflow-x: auto; }
+    .mr-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .mr-table th { background: var(--mr-orange); color: #1b1f23; font-weight: 700; padding: 8px 10px; text-align: right; white-space: normal; }
+    .mr-table td { padding: 7px 10px; border-bottom: 1px solid #e6e9ed; text-align: right; white-space: nowrap; }
+    .mr-table th.left, .mr-table td.left { text-align: left; }
+    .mr-table tr.total td { background: var(--mr-dark); color: #fff; font-weight: 700; }
+    .mr-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .mr-charts { grid-template-columns: 1fr; } }
+    .mr-chart { border: 1px solid var(--mr-line); border-radius: 10px; padding: 12px 14px; }
+    .mr-chart-title { font-weight: 700; margin-bottom: 8px; }
+    .mr-chart-empty { color: var(--muted); font-size: 0.85rem; padding: 12px 0; }
+    .mr-chart-foot { font-size: 0.74rem; color: var(--muted); margin-top: 6px; }
+    .mr-bar-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+    .mr-bar-label { flex: 0 0 36%; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mr-bar-track { flex: 1 1 auto; height: 14px; background: #f1f3f5; border-radius: 3px; }
+    .mr-bar-fill { height: 100%; border-radius: 3px; }
+    .mr-bar-val { flex: 0 0 30px; font-weight: 700; font-size: 0.85rem; text-align: right; }
+    .mr-insights { margin: 0; padding: 0; list-style: none; }
+    .mr-insights li { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef0f2; font-size: 0.92rem; }
+    .mr-num { flex: 0 0 22px; height: 22px; border-radius: 50%; background: var(--mr-orange); color: #1b1f23; font-weight: 800; font-size: 0.78rem; display: flex; align-items: center; justify-content: center; }
+
+    /* ---------- Management Report (PDF pages: A4 at 96 dpi) ---------- */
+    .mr-pdf-stage { position: fixed; left: -10000px; top: 0; width: 210mm; z-index: -1; background: #fff; }
+    .mr-page {
+      width: 210mm; height: 296mm; box-sizing: border-box; padding: 26px 32px 14px; background: #fff; color: #1b1f23;
+      font-family: 'Segoe UI', Verdana, Arial, sans-serif; font-size: 11.5px; line-height: 1.4;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .mr-page.tight { font-size: 10px; padding-top: 20px; }
+    .mr-page.tight .mr-table td { padding: 4px 7px; }
+    .mr-page.tight .mr-kpi { padding: 7px 10px; }
+    .mr-page.tight .mr-sec-head { margin: 12px 0 7px; }
+    .mr-page.tight .mr-insights li { padding: 5px 0; }
+    .mr-page .mr-body { flex: 1 1 auto; min-height: 0; }
+    .mr-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .mr-logo-client { height: 64px; width: auto; max-width: 200px; }
+    .mr-company { flex: 1; text-align: center; font-size: 25px; font-weight: 800; color: var(--mr-dark); }
+    .mr-logo-powered { height: 28px; width: auto; max-width: 150px; }
+    .mr-runhead { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; }
+    .mr-page .mr-title { font-size: 17px; margin: 10px 0 2px; }
+    .mr-page .mr-filterbar { font-size: 11.5px; padding: 6px 12px; margin-top: 8px; }
+    .mr-page .mr-compare { font-size: 9.5px; margin: 3px 0 2px; }
+    .mr-page .mr-sec-head { margin: 17px 0 9px; padding-bottom: 3px; }
+    .mr-page .mr-sec-head h3 { font-size: 13px; }
+    .mr-page .mr-sec-note { font-size: 9.5px; }
+    .mr-page .mr-kpis { grid-template-columns: repeat(var(--cols), 1fr); gap: 8px; }
+    .mr-page .mr-kpi { padding: 10px 11px; border-radius: 8px; }
+    .mr-page .mr-kpi-label { font-size: 9.5px; }
+    .mr-page .mr-kpi-value { font-size: 25px; margin: 2px 0; }
+    .mr-page .mr-delta { font-size: 9px; }
+    .mr-page .mr-kpi-note { font-size: 8.5px; }
+    .mr-page .mr-foot { font-size: 9px; margin-top: 4px; }
+    .mr-page .mr-table { font-size: 10.5px; }
+    .mr-page .mr-table th { padding: 5px 7px; font-size: 9.5px; }
+    .mr-page .mr-table td { padding: 6px 7px; }
+    .mr-page .mr-chart { padding: 8px 10px; }
+    .mr-page .mr-chart-title { font-size: 11px; margin-bottom: 5px; }
+    .mr-page .mr-bar-row { padding: 3px 0; }
+    .mr-page .mr-bar-label { font-size: 9.5px; }
+    .mr-page .mr-bar-track { height: 12px; }
+    .mr-page .mr-bar-val { font-size: 9.5px; }
+    .mr-page .mr-chart-foot { font-size: 8.5px; }
+    .mr-page .mr-insights li { padding: 7px 0; font-size: 11px; gap: 8px; }
+    .mr-page .mr-num { flex: 0 0 18px; height: 18px; font-size: 9.5px; }
+    .mr-page .mr-charts { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mr-pdf-footer { flex: 0 0 auto; display: flex; justify-content: space-between; font-size: 9px; color: #6b7480; border-top: 1px solid #e6e9ed; padding-top: 5px; margin-top: 6px; }
+
+    /* Printing: only the report pages, exactly A4, colours kept */
+    @page { size: A4 portrait; margin: 0; }
+    @media print {
+      html, body { background: #fff !important; }
+      body > *:not(#mrPrintRoot) { display: none !important; }
+      #mrPrintRoot { position: static !important; left: 0 !important; width: auto !important; z-index: auto !important; }
+      #mrPrintRoot * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .mr-page { break-after: page; page-break-after: always; }
+      .mr-page:last-child { break-after: auto; page-break-after: auto; }
+    }
   </style>
 </head>
 <body>
@@ -450,6 +592,7 @@
 
   <!-- Signed in -->
   <div id="appView" class="shell" hidden>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar" aria-label="Sidebar">
       <div class="brand">
         <button type="button" id="collapseBtn" class="icon-btn collapseBtn" aria-label="Collapse or expand menu" title="Collapse or expand menu">
@@ -465,6 +608,10 @@
         </div>
       </div>
       <nav id="nav" aria-label="Main menu"></nav>
+      <div class="sidebar-powered">
+        <span>Powered by</span>
+        <img src="powered-by-logo.png" alt="Powered by" onerror="this.parentNode.hidden=true">
+      </div>
     </aside>
 
     <div class="content">
@@ -792,6 +939,89 @@
       }
     }
 
+
+    // ---------- Extra list filters (Requested By, Date Range, Department, ...) ----------
+
+    function toIsoLoose_(value) {
+      var s = String(value || '').trim();
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return m[1] + '-' + m[2] + '-' + m[3];
+      m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (m) return m[3] + '-' + (m[2].length < 2 ? '0' + m[2] : m[2]) + '-' + (m[1].length < 2 ? '0' + m[1] : m[1]);
+      return '';
+    }
+
+    function dateInRange_(value, fromIso, toIso) {
+      if (!fromIso && !toIso) return true;
+      var iso = toIsoLoose_(value);
+      if (!iso) return false;
+      if (fromIso && iso < fromIso) return false;
+      if (toIso && iso > toIso) return false;
+      return true;
+    }
+
+    function distinctValues_(rows, key) {
+      var seen = {}, list = [];
+      rows.forEach(function (r) {
+        var v = String(r[key] || '').trim();
+        if (v && !seen[v]) { seen[v] = true; list.push(v); }
+      });
+      return list.sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; });
+    }
+
+    // Refills a dropdown but keeps the person's current choice when it still exists.
+    function refillKeep_(select, values, placeholder) {
+      if (!select) return;
+      var previous = select.value;
+      fillSelect(select, values, null, null, placeholder);
+      if (previous && values.indexOf(previous) >= 0) select.value = previous;
+    }
+
+    // Adds a second filter row under the search bar. defs: [{ id, label, type: 'select' | 'date' }]
+    function buildExtraFilters_(listCard, defs, onChange) {
+      var bar = el('div', 'filter-bar filter-bar-extra');
+      defs.forEach(function (d) {
+        var wrap = el('div', 'filter-field');
+        var lab = el('label', '', d.label);
+        lab.setAttribute('for', d.id);
+        var control = d.type === 'date' ? el('input') : el('select');
+        if (d.type === 'date') control.type = 'date';
+        control.id = d.id;
+        control.addEventListener('change', onChange);
+        wrap.appendChild(lab);
+        wrap.appendChild(control);
+        bar.appendChild(wrap);
+      });
+      var clear = el('button', 'outline', 'Clear filters');
+      clear.type = 'button';
+      clear.addEventListener('click', function () {
+        defs.forEach(function (d) { document.getElementById(d.id).value = ''; });
+        onChange();
+      });
+      bar.appendChild(clear);
+      var first = listCard.querySelector('.filter-bar');
+      first.parentNode.insertBefore(bar, first.nextSibling);
+    }
+
+    // spec: { selects: [{ id, field }], dateField, fromId, toId }
+    function applyExtraFilters_(rows, spec) {
+      var picked = [];
+      spec.selects.forEach(function (sel) {
+        var e = document.getElementById(sel.id);
+        if (e && e.value) picked.push({ field: sel.field, value: e.value });
+      });
+      var fe = document.getElementById(spec.fromId), te = document.getElementById(spec.toId);
+      var from = fe ? fe.value : '', to = te ? te.value : '';
+      return rows.filter(function (r) {
+        for (var i = 0; i < picked.length; i++) {
+          if (String(r[picked[i].field] || '').trim() !== picked[i].value) return false;
+        }
+        return dateInRange_(r[spec.dateField], from, to);
+      });
+    }
+
+    function isAdminRole_() { return !!(state.user && (state.user.role === 'Admin' || state.user.role === 'Super_Admin')); }
+
     function addCellText(tr, text, cls) {
       var td = document.createElement('td');
       td.textContent = text;
@@ -871,6 +1101,8 @@
           return '<svg ' + a + '><line x1="8" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="8" y1="18" x2="20" y2="18"></line><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>';
         case 'pendingRequests':
           return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
+        case 'managementReport':
+          return '<svg ' + a + '><rect x="4" y="3" width="16" height="18" rx="2"></rect><polyline points="8 15 11 12 13 14 17 9"></polyline><line x1="8" y1="18" x2="16" y2="18"></line></svg>';
         case 'reports':
           return '<svg ' + a + '><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3" height="7"></rect><rect x="11" y="7" width="3" height="11"></rect><rect x="16" y="14" width="3" height="4"></rect></svg>';
         case 'departments':
@@ -1163,12 +1395,14 @@
         b.appendChild(el('span', 'label', item.label));
 
         b.addEventListener('click', function () {
+          closeMobileNav_();
           openPage(item.id);
         });
         nav.appendChild(b);
       });
 
       document.getElementById('appView').classList.toggle('collapsed', loadCollapsed());
+      closeMobileNav_();
       showOnly('app');
       openPage('dashboard');
       startNotificationPolling();
@@ -1176,7 +1410,15 @@
 
     // ---------- Sidebar: icon-only console by default, expandable on desktop ----------
 
+    function isMobileNav_() { return !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches); }
+    function closeMobileNav_() { document.getElementById('appView').classList.remove('mobile-open'); }
+    window.addEventListener('resize', function () { if (!isMobileNav_()) closeMobileNav_(); });
+
     function toggleCollapse() {
+      if (isMobileNav_()) {
+        document.getElementById('appView').classList.toggle('mobile-open');
+        return;
+      }
       var collapsed = !document.getElementById('appView').classList.contains('collapsed');
       document.getElementById('appView').classList.toggle('collapsed', collapsed);
       saveCollapsed(collapsed);
@@ -1224,6 +1466,8 @@
         loadAllocationsList();
       } else if (id === 'reports') {
         loadReports();
+      } else if (id === 'managementReport') {
+        loadManagementReport();
       } else {
         showPlaceholder(label);
       }
@@ -1394,7 +1638,7 @@
         document.getElementById('ufDepartment').value = editing ? userOrNull.departmentId : '';
 
         fillRoleSelect(document.getElementById('ufRole'));
-        document.getElementById('ufRole').value = editing ? userOrNull.role : (rolesCache[0] || '');
+        document.getElementById('ufRole').value = editing ? userOrNull.role : (rolesCache.indexOf('GV_User') >= 0 ? 'GV_User' : (rolesCache[0] || ''));
 
         document.getElementById('ufPasswordWrap').hidden = editing;
         document.getElementById('ufPassword').value = '';
@@ -2106,11 +2350,11 @@
       listCard.innerHTML =
         '<h2>All Drivers</h2>' +
         '<div class="filter-bar">' +
-          '<input type="text" id="driversSearch" placeholder="Search name, mobile, license no...">' +
+          '<input type="text" id="driversSearch" placeholder="Search emp code, name, mobile, license no...">' +
           '<select id="driversStatusFilter"></select>' +
         '</div>' +
         '<div class="table-wrap"><table><thead><tr>' +
-        '<th>Name</th><th>Mobile</th><th>License No</th><th>License Expiry</th><th>Status</th><th></th>' +
+        '<th>Emp Code</th><th>Name</th><th>Mobile</th><th>License No</th><th>License Expiry</th><th>Status</th><th></th>' +
         '</tr></thead><tbody id="driversBody"></tbody></table></div>';
       page.appendChild(listCard);
 
@@ -2211,6 +2455,7 @@
         body.textContent = '';
         rows.forEach(function (d) {
           var tr = document.createElement('tr');
+          addCellText(tr, d.employeeCode || '-');
           addCellText(tr, d.driverName);
           addCellText(tr, d.mobile);
           addCellText(tr, d.licenseNo);
@@ -2234,7 +2479,7 @@
       function applyFilters() {
         var search = document.getElementById('driversSearch').value;
         var status = document.getElementById('driversStatusFilter').value;
-        renderList(filterRows_(driversCache, search, ['driverName', 'mobile', 'licenseNo'], status, 'status'));
+        renderList(filterRows_(driversCache, search, ['employeeCode', 'driverName', 'mobile', 'licenseNo'], status, 'status'));
       }
 
       function loadList() {
@@ -3040,7 +3285,7 @@
       var stamp = el('span', 'stamp', '');
       head.appendChild(stamp);
       // Admin's GV Requests page: Admin can raise a request for a GV user
-      if (!pendingOnly && state.user && state.user.role === 'Admin') {
+      if (!pendingOnly && isAdminRole_()) {
         var newReqBtn = el('button', 'outline', 'New Request');
         newReqBtn.type = 'button';
         newReqBtn.addEventListener('click', function () { openGvForm(null, load); });
@@ -3075,6 +3320,15 @@
         exportRowsButton_('Export to Excel', pendingOnly ? 'Pending_Requests' : 'GV_Requests',
           reqListExportHeaders, reqListExportMapper_, function () { return reqListCurrentFiltered; }));
 
+      var reqExtraSpec = { selects: [{ id: 'rqBy', field: 'requestedByName' }, { id: 'rqDept', field: 'departmentName' }],
+        dateField: 'requiredDate', fromId: 'rqFrom', toId: 'rqTo' };
+      buildExtraFilters_(listCard, [
+        { id: 'rqBy', label: 'Requested By', type: 'select' },
+        { id: 'rqFrom', label: 'Required From', type: 'date' },
+        { id: 'rqTo', label: 'Required To', type: 'date' },
+        { id: 'rqDept', label: 'Department', type: 'select' }
+      ], function () { resetPage_('reqListBody'); applyFilters(); });
+
       var baseRows = [];
 
       function applyFilters() {
@@ -3082,11 +3336,12 @@
         var statusEl = document.getElementById('reqListStatusFilter');
         var status = statusEl ? statusEl.value : '';
         var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
+        filtered = applyExtraFilters_(filtered, reqExtraSpec);
         reqListCurrentFiltered = filtered;
         pagedRender_('reqListBody', filtered, function (pageRows) {
           renderRequestsTable(document.getElementById('reqListBody'), pageRows,
             { showRequester: true, allowReject: true, allowCancel: true, allowAllocate: true,
-              allowEdit: !pendingOnly && state.user && state.user.role === 'Admin' }, load);
+              allowEdit: !pendingOnly && isAdminRole_() }, load);
         }, baseRows.length);
       }
 
@@ -3106,6 +3361,8 @@
             stamp.textContent = baseRows.length + (baseRows.length === 1 ? ' request' : ' requests');
             var statusEl = document.getElementById('reqListStatusFilter');
             if (statusEl) fillSelect(statusEl, distinctStatuses_(baseRows), null, null, 'All Statuses');
+            refillKeep_(document.getElementById('rqBy'), distinctValues_(baseRows, 'requestedByName'), 'All Requesters');
+            refillKeep_(document.getElementById('rqDept'), distinctValues_(baseRows, 'departmentName'), 'All Departments');
             applyFilters();
           },
           function (err) {
@@ -3160,7 +3417,7 @@
 
       var listCard = el('section', 'card');
       listCard.innerHTML =
-        '<h2>Allocations</h2>' +
+        '<h2>' + ((state.user && state.user.role === 'Driver') ? 'My Trips' : 'Allocations') + '</h2>' +
         '<div class="filter-bar">' +
           '<input type="text" id="allocSearch" placeholder="Search allocation id, request id, requester, route, vehicle, driver...">' +
           '<select id="allocStatusFilter"></select>' +
@@ -3186,6 +3443,19 @@
       listCard.querySelector('.filter-bar').appendChild(
         exportRowsButton_('Export to Excel', 'Allocations', allocExportHeaders, allocExportMapper_,
           function () { return allocCurrentFiltered; }));
+
+      var isDriverUser_ = !!(state.user && state.user.role === 'Driver');
+      var allocExtraSpec = { selects: [{ id: 'alBy', field: 'requestedByName' }, { id: 'alDept', field: 'requestDepartmentName' },
+          { id: 'alAllocBy', field: 'allocatedByName' }].concat(isDriverUser_ ? [] : [{ id: 'alDriver', field: 'driverName' }]),
+        dateField: 'plannedStartDateTime', fromId: 'alFrom', toId: 'alTo' };
+      buildExtraFilters_(listCard, [
+        { id: 'alBy', label: 'Requested By', type: 'select' },
+        { id: 'alFrom', label: 'Planned From', type: 'date' },
+        { id: 'alTo', label: 'Planned To', type: 'date' },
+        { id: 'alDept', label: 'Department', type: 'select' },
+        { id: 'alAllocBy', label: 'Allocated By', type: 'select' }
+      ].concat(isDriverUser_ ? [] : [{ id: 'alDriver', label: 'Driver Name', type: 'select' }]),
+      function () { resetPage_('allocListBody'); applyFilters(); });
 
       var allocCache = [];
 
@@ -3248,6 +3518,7 @@
         var search = document.getElementById('allocSearch').value;
         var status = document.getElementById('allocStatusFilter').value;
         var filtered = filterRows_(allocCache, search, ['allocationId', 'requestId', 'requestedByName', 'requestedByMobile', 'requestFromLocationName', 'requestToLocationName', 'vehicleNo', 'driverName', 'driverMobile', 'allocatedByName'], status, 'status');
+        filtered = applyExtraFilters_(filtered, allocExtraSpec);
         allocCurrentFiltered = filtered;
         renderAllocRows(filtered);
       }
@@ -3259,6 +3530,10 @@
             allocCache = res.data.allocations;
             stamp.textContent = allocCache.length + (allocCache.length === 1 ? ' allocation' : ' allocations');
             fillSelect(document.getElementById('allocStatusFilter'), distinctStatuses_(allocCache), null, null, 'All Statuses');
+            refillKeep_(document.getElementById('alBy'), distinctValues_(allocCache, 'requestedByName'), 'All Requesters');
+            refillKeep_(document.getElementById('alDept'), distinctValues_(allocCache, 'requestDepartmentName'), 'All Departments');
+            refillKeep_(document.getElementById('alAllocBy'), distinctValues_(allocCache, 'allocatedByName'), 'All Allocators');
+            refillKeep_(document.getElementById('alDriver'), distinctValues_(allocCache, 'driverName'), 'All Drivers');
             applyFilters();
           },
           function (err) {
@@ -3273,6 +3548,499 @@
 
       load();
     }
+
+    // ---------- Management Report (Super_Admin) ----------
+
+    var MR_COMPANY = 'Otto Clothing Pvt Ltd';
+    var MR_TITLE = 'Transport Vehicle Allocation Report';
+
+    function mrPad2_(n) { return n < 10 ? '0' + n : String(n); }
+    function mrIso_(d) { return d.getFullYear() + '-' + mrPad2_(d.getMonth() + 1) + '-' + mrPad2_(d.getDate()); }
+
+    function mrQuickRange_(key) {
+      var t = new Date();
+      t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+      if (key === 'today') return { from: mrIso_(t), to: mrIso_(t) };
+      if (key === 'yesterday') { var y = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1); return { from: mrIso_(y), to: mrIso_(y) }; }
+      if (key === 'last7') { var s = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 6); return { from: mrIso_(s), to: mrIso_(t) }; }
+      if (key === 'month') { var m = new Date(t.getFullYear(), t.getMonth(), 1); return { from: mrIso_(m), to: mrIso_(t) }; }
+      return null;
+    }
+
+    // Minutes -> "45m", "2h 10m", "1d 3h"
+    function mrDur_(ms) {
+      if (ms === null || ms === undefined) return '–';
+      var mins = Math.round(Math.abs(ms) / 60000);
+      if (mins < 1) return '0m';
+      var d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+      if (d > 0) return d + 'd' + (h ? ' ' + h + 'h' : '');
+      if (h > 0) return h + 'h' + (m ? ' ' + m + 'm' : '');
+      return m + 'm';
+    }
+    // Plan-vs-actual gaps: + means later than the earlier step, - means earlier
+    function mrSigned_(ms) {
+      if (ms === null || ms === undefined) return '–';
+      if (Math.abs(ms) < 60000) return 'On time';
+      return (ms > 0 ? '+' : '−') + mrDur_(ms);
+    }
+
+    // Weighted average of several { ms, n } results
+    function mrMerge_(list) {
+      var sum = 0, n = 0;
+      list.forEach(function (v) { if (v && v.n) { sum += v.ms * v.n; n += v.n; } });
+      return n ? { ms: Math.round(sum / n), n: n } : { ms: null, n: 0 };
+    }
+
+    // Collapses everything past the first maxRows - 1 groups into one "Others" row
+    function mrLimitGroups_(groups, maxRows) {
+      if (!maxRows || groups.length <= maxRows) return groups;
+      var keep = groups.slice(0, maxRows - 1), rest = groups.slice(maxRows - 1);
+      var o = { label: 'Others (' + rest.length + ')', total: 0, allocated: 0, pending: 0, completed: 0, cancelled: 0, rejected: 0, process: {}, gaps: {} };
+      rest.forEach(function (g) {
+        o.total += g.total; o.allocated += g.allocated; o.pending += g.pending;
+        o.completed += g.completed; o.cancelled += g.cancelled; o.rejected += g.rejected;
+      });
+      ['requestToAllocation', 'loading', 'trip'].forEach(function (k) { o.process[k] = mrMerge_(rest.map(function (g) { return g.process[k]; })); });
+      ['requiredToPlanned', 'plannedToReached', 'reachedToLoadStart', 'loadEndToTripStart'].forEach(function (k) { o.gaps[k] = mrMerge_(rest.map(function (g) { return g.gaps[k]; })); });
+      return keep.concat([o]);
+    }
+
+    function mrDeltaEl_(cur, prev, higherIsBetter) {
+      var d = el('div', 'mr-delta');
+      if (!prev && !cur) { d.className += ' neutral'; d.textContent = '– no change'; return d; }
+      if (!prev) { d.className += ' neutral'; d.textContent = 'new · none before'; return d; }
+      var pct = Math.round(((cur - prev) / prev) * 100);
+      if (pct === 0) { d.className += ' neutral'; d.textContent = '– same as previous (' + prev + ')'; return d; }
+      var good = (pct > 0) === higherIsBetter;
+      d.className += good ? ' good' : ' bad';
+      d.textContent = (pct > 0 ? '▲ +' : '▼ ') + pct + '% vs previous (' + prev + ')';
+      return d;
+    }
+
+    function mrKpi_(label, value, sub) {
+      var c = el('div', 'mr-kpi');
+      c.appendChild(el('div', 'mr-kpi-label', label));
+      c.appendChild(el('div', 'mr-kpi-value', String(value)));
+      if (sub) c.appendChild(sub);
+      return c;
+    }
+    function mrNote_(text) { return el('div', 'mr-kpi-note', text); }
+
+    function mrSection_(title, note) {
+      var h = el('div', 'mr-sec-head');
+      h.appendChild(el('h3', '', title));
+      if (note) h.appendChild(el('span', 'mr-sec-note', note));
+      return h;
+    }
+
+    function mrKpiGrid_(cols) {
+      var g = el('div', 'mr-kpis');
+      g.style.setProperty('--cols', String(cols));
+      return g;
+    }
+
+    function mrRequestKpis_(data) {
+      var c = data.stats.current, p = data.stats.previous;
+      var g = mrKpiGrid_(5);
+      g.appendChild(mrKpi_('Total Request', c.total, mrDeltaEl_(c.total, p.total, true)));
+      g.appendChild(mrKpi_('Total Allocated', c.allocated, mrDeltaEl_(c.allocated, p.allocated, true)));
+      g.appendChild(mrKpi_('Total Pending', c.pending, mrDeltaEl_(c.pending, p.pending, false)));
+      g.appendChild(mrKpi_('Completed', c.completed, mrDeltaEl_(c.completed, p.completed, true)));
+      g.appendChild(mrKpi_('Cancelled', c.cancelled, mrDeltaEl_(c.cancelled, p.cancelled, false)));
+      var wrap = el('div');
+      wrap.appendChild(g);
+      if (c.rejected || p.rejected) {
+        wrap.appendChild(el('div', 'mr-foot', 'Rejected requests (not counted as Cancelled): ' + c.rejected + ' now, ' + p.rejected + ' in the previous period.'));
+      }
+      return wrap;
+    }
+
+    function mrProcessKpis_(data) {
+      var p = data.process;
+      var g = mrKpiGrid_(3);
+      g.appendChild(mrKpi_('Avg. Request to Allocation', mrDur_(p.requestToAllocation.ms), mrNote_('Raised → vehicle allocated · ' + p.requestToAllocation.n + ' trips')));
+      g.appendChild(mrKpi_('Avg. Loading Time', mrDur_(p.loading.ms), mrNote_('Loading start → end · ' + p.loading.n + ' trips')));
+      g.appendChild(mrKpi_('Avg. Trip Time', mrDur_(p.trip.ms), mrNote_('Trip start → end · ' + p.trip.n + ' trips')));
+      return g;
+    }
+
+    function mrGapKpis_(data) {
+      var x = data.gaps;
+      var g = mrKpiGrid_(4);
+      g.appendChild(mrKpi_('Required vs Planned', mrSigned_(x.requiredToPlanned.ms), mrNote_('Planned start vs required time · ' + x.requiredToPlanned.n + ' trips')));
+      g.appendChild(mrKpi_('Planned vs Actual Reached', mrSigned_(x.plannedToReached.ms), mrNote_('Reached vs planned start · ' + x.plannedToReached.n + ' trips')));
+      g.appendChild(mrKpi_('Reached vs Load Start', mrDur_(x.reachedToLoadStart.ms), mrNote_('Reached → loading starts · ' + x.reachedToLoadStart.n + ' trips')));
+      g.appendChild(mrKpi_('Load End vs Trip Start', mrDur_(x.loadEndToTripStart.ms), mrNote_('Loading ends → trip starts · ' + x.loadEndToTripStart.n + ' trips')));
+      return g;
+    }
+
+    function mrTable_(headers, rows, totalRow) {
+      var wrap = el('div', 'mr-table-wrap');
+      var t = el('table', 'mr-table');
+      var thead = el('thead'), htr = el('tr');
+      headers.forEach(function (h, i) { var th = el('th', i === 0 ? 'left' : '', h); htr.appendChild(th); });
+      thead.appendChild(htr);
+      t.appendChild(thead);
+      var tb = el('tbody');
+      function addRow(cells, cls) {
+        var tr = el('tr', cls || '');
+        cells.forEach(function (c, i) { tr.appendChild(el('td', i === 0 ? 'left' : '', String(c))); });
+        tb.appendChild(tr);
+      }
+      rows.forEach(function (r) { addRow(r); });
+      if (!rows.length) {
+        var tr0 = el('tr'); var td0 = el('td', 'left', 'No requests in this period.'); td0.colSpan = headers.length; tr0.appendChild(td0); tb.appendChild(tr0);
+      }
+      if (totalRow && rows.length) addRow(totalRow, 'total');
+      t.appendChild(tb);
+      wrap.appendChild(t);
+      return wrap;
+    }
+
+    function mrGroupColLabel_(data) { return data.groupBy === 'user' ? 'User' : 'Department'; }
+
+    function mrStatusTable_(data, maxRows) {
+      var groups = mrLimitGroups_(data.groups, maxRows);
+      var rows = groups.map(function (g) { return [g.label, g.total, g.allocated, g.pending, g.completed, g.cancelled]; });
+      var c = data.stats.current;
+      return mrTable_([mrGroupColLabel_(data), 'Total Request', 'Total Allocated', 'Total Pending', 'Completed', 'Cancelled'],
+        rows, ['Total', c.total, c.allocated, c.pending, c.completed, c.cancelled]);
+    }
+
+    function mrProcessTable_(data, maxRows) {
+      var groups = mrLimitGroups_(data.groups, maxRows);
+      function line(label, p, g) {
+        return [label, mrDur_(p.requestToAllocation.ms), mrDur_(p.loading.ms), mrDur_(p.trip.ms),
+          mrSigned_(g.requiredToPlanned.ms), mrSigned_(g.plannedToReached.ms), mrDur_(g.reachedToLoadStart.ms), mrDur_(g.loadEndToTripStart.ms)];
+      }
+      var rows = groups.map(function (g) { return line(g.label, g.process, g.gaps); });
+      return mrTable_([mrGroupColLabel_(data), 'Request to Allocation', 'Avg. Loading', 'Avg. Trip', 'Required vs Planned', 'Planned vs Reached', 'Reached vs Load Start', 'Load End vs Trip Start'],
+        rows, line('All', data.process, data.gaps));
+    }
+
+    function mrBarChart_(title, items, maxBars, color) {
+      var box = el('div', 'mr-chart');
+      box.appendChild(el('div', 'mr-chart-title', title));
+      var list = items.slice(0, maxBars);
+      if (!list.length) { box.appendChild(el('div', 'mr-chart-empty', 'No trips in this period.')); return box; }
+      var max = 0;
+      list.forEach(function (i) { if (i.count > max) max = i.count; });
+      list.forEach(function (i) {
+        var row = el('div', 'mr-bar-row');
+        row.appendChild(el('div', 'mr-bar-label', i.label));
+        var track = el('div', 'mr-bar-track');
+        var bar = el('div', 'mr-bar-fill');
+        bar.style.width = Math.max(3, Math.round((i.count / max) * 100)) + '%';
+        bar.style.background = color;
+        track.appendChild(bar);
+        row.appendChild(track);
+        row.appendChild(el('div', 'mr-bar-val', String(i.count)));
+        box.appendChild(row);
+      });
+      box.appendChild(el('div', 'mr-chart-foot', 'Total trips per ' + (title.indexOf('Vehicle') === 0 ? 'vehicle' : 'driver')));
+      return box;
+    }
+
+    function mrCharts_(data, maxBars) {
+      var row = el('div', 'mr-charts');
+      row.appendChild(mrBarChart_('Vehicle-wise Total Trips', data.vehicleTrips, maxBars, '#f8a51a'));
+      row.appendChild(mrBarChart_('Driver-wise Total Trips', data.driverTrips, maxBars, '#6f9c82'));
+      return row;
+    }
+
+    function mrInsights_(data) {
+      var ol = el('ol', 'mr-insights');
+      data.insights.forEach(function (t, i) { var li = el('li'); li.appendChild(el('span', 'mr-num', String(i + 1))); li.appendChild(el('span', '', t)); ol.appendChild(li); });
+      return ol;
+    }
+
+    function mrFilterBar_(data) {
+      var wrap = el('div');
+      var bar = el('div', 'mr-filterbar');
+      var a = el('div'); a.innerHTML = 'Date range: <b></b>'; a.querySelector('b').textContent = data.period.label;
+      var b = el('div'); b.innerHTML = 'Department: <b></b>'; b.querySelector('b').textContent = data.department ? data.department.name : 'All Departments';
+      bar.appendChild(a); bar.appendChild(b);
+      wrap.appendChild(bar);
+      wrap.appendChild(el('div', 'mr-compare', 'Compared with the previous period: ' + data.previous.label));
+      return wrap;
+    }
+
+    function mrGroupNote_(data) {
+      return data.groupBy === 'user' ? 'user-wise for ' + (data.department ? data.department.name : '') : 'department-wise';
+    }
+
+    // The whole report as page-like sections (used on screen)
+    function mrBuildScreen_(data) {
+      var doc = el('div', 'mr-doc');
+      var t = el('div', 'mr-title', MR_TITLE);
+      doc.appendChild(t);
+      doc.appendChild(el('div', 'mr-rule'));
+      doc.appendChild(mrFilterBar_(data));
+      doc.appendChild(mrSection_('Request Summary', 'vs previous period'));
+      doc.appendChild(mrRequestKpis_(data));
+      doc.appendChild(mrSection_('Process Time', 'average per trip'));
+      doc.appendChild(mrProcessKpis_(data));
+      doc.appendChild(mrSection_('Process Gap Time', '+ later · − earlier'));
+      doc.appendChild(mrGapKpis_(data));
+      doc.appendChild(mrSection_('Request Status', mrGroupNote_(data)));
+      doc.appendChild(mrStatusTable_(data, 0));
+      doc.appendChild(mrSection_('Process Time and Gap Time', mrGroupNote_(data)));
+      doc.appendChild(mrProcessTable_(data, 0));
+      doc.appendChild(mrSection_('Trips by Vehicle and Driver', 'top 10'));
+      doc.appendChild(mrCharts_(data, 10));
+      doc.appendChild(mrSection_('Key Insights', ''));
+      doc.appendChild(mrInsights_(data));
+      return doc;
+    }
+
+    // ----- PDF: exactly two A4 pages in the same look as the factory production report -----
+
+    function mrPdfHeader_() {
+      var h = el('div', 'mr-header');
+      var logo = el('img', 'mr-logo-client'); logo.src = 'client-logo.png'; logo.alt = '';
+      logo.onerror = function () { logo.style.visibility = 'hidden'; };
+      var name = el('div', 'mr-company', MR_COMPANY);
+      var pw = el('img', 'mr-logo-powered'); pw.src = 'powered-by-logo.png'; pw.alt = '';
+      pw.onerror = function () { pw.style.visibility = 'hidden'; };
+      h.appendChild(logo); h.appendChild(name); h.appendChild(pw);
+      var wrap = el('div');
+      wrap.appendChild(h);
+      wrap.appendChild(el('div', 'mr-rule thick'));
+      return wrap;
+    }
+
+    function mrPdfFooter_(data, pageNo) {
+      var f = el('div', 'mr-pdf-footer');
+      f.appendChild(el('span', '', 'Generated ' + data.generatedAt + ' · Otto Transport System'));
+      f.appendChild(el('span', '', 'Page ' + pageNo + ' of 2'));
+      return f;
+    }
+
+    function mrBuildPdfPages_(data, opts) {
+      var tight = opts.tight ? ' tight' : '';
+      var p1 = el('div', 'mr-page' + tight), b1 = el('div', 'mr-body');
+      b1.appendChild(mrPdfHeader_());
+      b1.appendChild(el('div', 'mr-title', MR_TITLE));
+      b1.appendChild(el('div', 'mr-rule'));
+      b1.appendChild(mrFilterBar_(data));
+      b1.appendChild(mrSection_('Request Summary', data.period.label + ' · change vs ' + data.previous.label));
+      b1.appendChild(mrRequestKpis_(data));
+      b1.appendChild(mrSection_('Process Time', 'average per trip'));
+      b1.appendChild(mrProcessKpis_(data));
+      b1.appendChild(mrSection_('Process Gap Time', '+ later · − earlier than the previous step'));
+      b1.appendChild(mrGapKpis_(data));
+      b1.appendChild(mrSection_('Request Status', mrGroupNote_(data)));
+      b1.appendChild(mrStatusTable_(data, opts.rows));
+      p1.appendChild(b1);
+      p1.appendChild(mrPdfFooter_(data, 1));
+
+      var p2 = el('div', 'mr-page' + tight), b2 = el('div', 'mr-body');
+      var run = el('div', 'mr-runhead');
+      run.appendChild(el('b', '', MR_TITLE));
+      run.appendChild(el('span', '', data.period.label + (data.department ? ' · ' + data.department.name : ' · All Departments')));
+      b2.appendChild(run);
+      b2.appendChild(el('div', 'mr-rule thick'));
+      b2.appendChild(mrSection_('Process Time and Gap Time', mrGroupNote_(data)));
+      b2.appendChild(mrProcessTable_(data, opts.rows));
+      b2.appendChild(mrSection_('Trips by Vehicle and Driver', 'top ' + opts.bars));
+      b2.appendChild(mrCharts_(data, opts.bars));
+      b2.appendChild(mrSection_('Key Insights', 'from the data above'));
+      b2.appendChild(mrInsights_(data));
+      p2.appendChild(b2);
+      p2.appendChild(mrPdfFooter_(data, 2));
+      return [p1, p2];
+    }
+
+    function mrImagesReady_(root) {
+      var imgs = Array.prototype.slice.call(root.querySelectorAll('img'));
+      return Promise.all(imgs.map(function (im) {
+        if (im.complete) return null;
+        return new Promise(function (res) { im.addEventListener('load', res); im.addEventListener('error', res); });
+      }));
+    }
+
+    // Export as PDF: the two A4 pages are built in a hidden area, then the browser's
+    // own print window opens with only those pages (Destination: Save as PDF).
+    // Text stays sharp, and no outside library is needed.
+    function mrExportPdf_(data, button) {
+      var stage = document.getElementById('mrPrintRoot');
+      if (stage) stage.parentNode.removeChild(stage);
+      stage = el('div', 'mr-pdf-stage');
+      stage.id = 'mrPrintRoot';
+      document.body.appendChild(stage);
+
+      // Try the normal layout first; if a page would overflow, use smaller settings until both pages fit.
+      var attempts = [
+        { rows: 12, bars: 8, tight: false }, { rows: 10, bars: 8, tight: true },
+        { rows: 8, bars: 6, tight: true }, { rows: 6, bars: 5, tight: true }
+      ];
+      for (var i = 0; i < attempts.length; i++) {
+        stage.textContent = '';
+        var pages = mrBuildPdfPages_(data, attempts[i]);
+        pages.forEach(function (p) { stage.appendChild(p); });
+        var fits = pages.every(function (p) { var b = p.querySelector('.mr-body'); return b.scrollHeight <= b.clientHeight + 1; });
+        if (fits) break;
+      }
+
+      var oldTitle = document.title;
+      document.title = 'Transport_Vehicle_Allocation_Report_' + data.period.from + (data.period.to !== data.period.from ? '_to_' + data.period.to : '');
+      function cleanup() {
+        window.removeEventListener('afterprint', cleanup);
+        document.title = oldTitle;
+        var st = document.getElementById('mrPrintRoot');
+        if (st && st.parentNode) st.parentNode.removeChild(st);
+      }
+      window.addEventListener('afterprint', cleanup);
+
+      mrImagesReady_(stage).then(function () {
+        window.print();
+      });
+    }
+
+    function mrExportCsv_(data) {
+      var c = data.stats.current, p = data.stats.previous;
+      function chg(a, b) { return b ? Math.round(((a - b) / b) * 100) + '%' : ''; }
+      var rows = [];
+      rows.push([MR_TITLE]);
+      rows.push(['Company', MR_COMPANY]);
+      rows.push(['Date range', data.period.label]);
+      rows.push(['Department', data.department ? data.department.name : 'All Departments']);
+      rows.push(['Compared with', data.previous.label]);
+      rows.push(['Generated', data.generatedAt]);
+      rows.push([]);
+      rows.push(['REQUEST SUMMARY']);
+      rows.push(['Metric', 'This period', 'Previous period', 'Change']);
+      [['Total Request', 'total'], ['Total Allocated', 'allocated'], ['Total Pending', 'pending'], ['Completed', 'completed'], ['Cancelled', 'cancelled'], ['Rejected', 'rejected']].forEach(function (m) {
+        rows.push([m[0], c[m[1]], p[m[1]], chg(c[m[1]], p[m[1]])]);
+      });
+      rows.push([]);
+      rows.push(['PROCESS TIME AND GAP TIME (average, minutes)']);
+      rows.push(['Metric', 'Average minutes', 'Trips counted']);
+      function mins(v) { return v.ms === null ? '' : Math.round(v.ms / 60000); }
+      rows.push(['Request to Allocation', mins(data.process.requestToAllocation), data.process.requestToAllocation.n]);
+      rows.push(['Loading Time', mins(data.process.loading), data.process.loading.n]);
+      rows.push(['Trip Time', mins(data.process.trip), data.process.trip.n]);
+      rows.push(['Required vs Planned (+ later / - earlier)', mins(data.gaps.requiredToPlanned), data.gaps.requiredToPlanned.n]);
+      rows.push(['Planned vs Actual Reached (+ later / - earlier)', mins(data.gaps.plannedToReached), data.gaps.plannedToReached.n]);
+      rows.push(['Reached vs Load Start', mins(data.gaps.reachedToLoadStart), data.gaps.reachedToLoadStart.n]);
+      rows.push(['Load End vs Trip Start', mins(data.gaps.loadEndToTripStart), data.gaps.loadEndToTripStart.n]);
+      rows.push([]);
+      rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' REQUEST STATUS']);
+      rows.push([mrGroupColLabel_(data), 'Total Request', 'Total Allocated', 'Total Pending', 'Completed', 'Cancelled', 'Rejected']);
+      data.groups.forEach(function (g) { rows.push([g.label, g.total, g.allocated, g.pending, g.completed, g.cancelled, g.rejected]); });
+      rows.push(['Total', c.total, c.allocated, c.pending, c.completed, c.cancelled, c.rejected]);
+      rows.push([]);
+      rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' PROCESS TIME AND GAP TIME (average, minutes)']);
+      rows.push([mrGroupColLabel_(data), 'Request to Allocation', 'Avg Loading', 'Avg Trip', 'Required vs Planned', 'Planned vs Reached', 'Reached vs Load Start', 'Load End vs Trip Start']);
+      data.groups.forEach(function (g) {
+        rows.push([g.label, mins(g.process.requestToAllocation), mins(g.process.loading), mins(g.process.trip),
+          mins(g.gaps.requiredToPlanned), mins(g.gaps.plannedToReached), mins(g.gaps.reachedToLoadStart), mins(g.gaps.loadEndToTripStart)]);
+      });
+      rows.push([]);
+      rows.push(['VEHICLE-WISE TOTAL TRIPS']);
+      rows.push(['Vehicle', 'Trips']);
+      data.vehicleTrips.forEach(function (v) { rows.push([v.label, v.count]); });
+      rows.push([]);
+      rows.push(['DRIVER-WISE TOTAL TRIPS']);
+      rows.push(['Driver', 'Trips']);
+      data.driverTrips.forEach(function (v) { rows.push([v.label, v.count]); });
+      rows.push([]);
+      rows.push(['KEY INSIGHTS']);
+      data.insights.forEach(function (t, i) { rows.push([(i + 1) + '. ' + t]); });
+      downloadCsv_('Management_Report_' + data.period.from + (data.period.to !== data.period.from ? '_to_' + data.period.to : ''), null, rows);
+    }
+
+    function loadManagementReport() {
+      var page = document.getElementById('page');
+      page.textContent = '';
+
+      var controls = el('section', 'card mr-controls');
+      controls.innerHTML =
+        '<div class="mr-controls-top">' +
+          '<h2>Management Report</h2>' +
+          '<div class="mr-export-btns">' +
+            '<button type="button" class="outline" id="mrCsvBtn" disabled>Export as CSV</button>' +
+            '<button type="button" id="mrPdfBtn" disabled>Export as PDF</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="mr-quick" id="mrQuick">' +
+          '<button type="button" class="outline" data-q="today">Today</button>' +
+          '<button type="button" class="outline" data-q="yesterday">Yesterday</button>' +
+          '<button type="button" class="outline" data-q="last7">Last 7 Days</button>' +
+          '<button type="button" class="outline" data-q="month">This Month</button>' +
+        '</div>' +
+        '<div class="mr-filter-row">' +
+          '<div class="filter-field"><label for="mrFrom">From</label><input type="date" id="mrFrom"></div>' +
+          '<div class="filter-field"><label for="mrTo">To</label><input type="date" id="mrTo"></div>' +
+          '<div class="filter-field"><label for="mrDept">Department</label><select id="mrDept"></select></div>' +
+          '<button type="button" id="mrApplyBtn">Apply</button>' +
+        '</div>';
+      page.appendChild(controls);
+
+      var msg = el('p', 'msg muted', '');
+      page.appendChild(msg);
+      var out = el('div');
+      page.appendChild(out);
+
+      var current = null;
+      var fromEl = document.getElementById('mrFrom'), toEl = document.getElementById('mrTo'), deptEl = document.getElementById('mrDept');
+      var csvBtn = document.getElementById('mrCsvBtn'), pdfBtn = document.getElementById('mrPdfBtn'), applyBtn = document.getElementById('mrApplyBtn');
+
+      function markQuick() {
+        Array.prototype.forEach.call(document.querySelectorAll('#mrQuick button'), function (b) {
+          var r = mrQuickRange_(b.getAttribute('data-q'));
+          var on = r && r.from === fromEl.value && r.to === toEl.value;
+          b.className = on ? 'mr-quick-on' : 'outline';
+        });
+      }
+
+      function load() {
+        if (!fromEl.value || !toEl.value) { msg.className = 'msg bad'; msg.textContent = 'Choose both dates.'; return; }
+        if (fromEl.value > toEl.value) { msg.className = 'msg bad'; msg.textContent = 'From date cannot be after To date.'; return; }
+        markQuick();
+        msg.className = 'msg muted'; msg.textContent = 'Loading report...';
+        csvBtn.disabled = true; pdfBtn.disabled = true;
+        var thisLoad = ++state.loadCounter;
+        callBackend('getManagementReport', [state.token, { fromDate: fromEl.value, toDate: toEl.value, departmentId: deptEl.value }], applyBtn,
+          function (res) {
+            if (thisLoad !== state.loadCounter || state.current !== 'managementReport') return;
+            current = res.data;
+            msg.textContent = '';
+            out.textContent = '';
+            out.appendChild(mrBuildScreen_(current));
+            csvBtn.disabled = false; pdfBtn.disabled = false;
+          },
+          function (err) {
+            if (isSessionError(err)) { showLogin(err); return; }
+            msg.className = 'msg bad'; msg.textContent = err;
+          });
+      }
+
+      document.getElementById('mrQuick').addEventListener('click', function (e) {
+        var q = e.target && e.target.getAttribute && e.target.getAttribute('data-q');
+        if (!q) return;
+        var r = mrQuickRange_(q);
+        fromEl.value = r.from; toEl.value = r.to;
+        load();
+      });
+      applyBtn.addEventListener('click', load);
+      deptEl.addEventListener('change', load);
+      csvBtn.addEventListener('click', function () { if (current) mrExportCsv_(current); });
+      pdfBtn.addEventListener('click', function () { if (current) mrExportPdf_(current, pdfBtn); });
+
+      var today = mrQuickRange_('today');
+      fromEl.value = today.from; toEl.value = today.to;
+
+      // Departments for the filter come from the Users page data call
+      callBackend('getDepartments', [state.token], null,
+        function (res) {
+          var list = (res.data.departments || []).filter(function (d) { return d.isActive !== false; });
+          fillSelect(deptEl, list, 'departmentId', 'departmentName', 'All Departments');
+          load();
+        },
+        function () { fillSelect(deptEl, [], 'id', 'name', 'All Departments'); load(); });
+    }
+
 
     // ---------- Reports (Admin) ----------
 
@@ -3499,6 +4267,7 @@
     document.getElementById('loginBtn').addEventListener('click', doLogin);
     document.getElementById('logoutBtn').addEventListener('click', doLogout);
     document.getElementById('collapseBtn').addEventListener('click', toggleCollapse);
+    document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileNav_);
     document.getElementById('viewCloseBtn').addEventListener('click', closeRequestView);
     document.getElementById('allocCloseBtn').addEventListener('click', closeAllocateModal);
     document.getElementById('allocCancelBtn').addEventListener('click', closeAllocateModal);
