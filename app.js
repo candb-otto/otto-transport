@@ -2818,9 +2818,9 @@
   function mrLimitGroups_(groups, maxRows) {
     if (!maxRows || groups.length <= maxRows) return groups;
     var keep = groups.slice(0, maxRows - 1), rest = groups.slice(maxRows - 1);
-    var o = { label: 'Others (' + rest.length + ')', total: 0, allocated: 0, pending: 0, completed: 0, cancelled: 0, rejected: 0, process: {}, gaps: {} };
+    var o = { label: 'Others (' + rest.length + ')', total: 0, allocated: 0, pending: 0, inProgress: 0, completed: 0, cancelled: 0, rejected: 0, process: {}, gaps: {} };
     rest.forEach(function (g) {
-      o.total += g.total; o.allocated += g.allocated; o.pending += g.pending;
+      o.total += g.total; o.allocated += g.allocated; o.pending += g.pending; o.inProgress += g.inProgress;
       o.completed += g.completed; o.cancelled += g.cancelled; o.rejected += g.rejected;
     });
     ['requestToAllocation', 'loading', 'trip'].forEach(function (k) { o.process[k] = mrMerge_(rest.map(function (g) { return g.process[k]; })); });
@@ -2864,17 +2864,16 @@
 
   function mrRequestKpis_(data) {
     var c = data.stats.current, p = data.stats.previous;
-    var g = mrKpiGrid_(5);
+    var g = mrKpiGrid_(6);
     g.appendChild(mrKpi_('Total Request', c.total, mrDeltaEl_(c.total, p.total, true)));
-    g.appendChild(mrKpi_('Total Allocated', c.allocated, mrDeltaEl_(c.allocated, p.allocated, true)));
-    g.appendChild(mrKpi_('Total Pending', c.pending, mrDeltaEl_(c.pending, p.pending, false)));
+    g.appendChild(mrKpi_('Pending', c.pending, mrDeltaEl_(c.pending, p.pending, false)));
+    g.appendChild(mrKpi_('Allocated', c.allocated, mrDeltaEl_(c.allocated, p.allocated, true)));
+    g.appendChild(mrKpi_('In Progress', c.inProgress, mrDeltaEl_(c.inProgress, p.inProgress, true)));
     g.appendChild(mrKpi_('Completed', c.completed, mrDeltaEl_(c.completed, p.completed, true)));
     g.appendChild(mrKpi_('Cancelled', c.cancelled, mrDeltaEl_(c.cancelled, p.cancelled, false)));
     var wrap = el('div');
     wrap.appendChild(g);
-    if (c.rejected || p.rejected) {
-      wrap.appendChild(el('div', 'mr-foot', 'Rejected requests (not counted as Cancelled): ' + c.rejected + ' now, ' + p.rejected + ' in the previous period.'));
-    }
+    wrap.appendChild(el('div', 'mr-foot', 'Total = Pending + Allocated + In Progress (Reached, Loading, On Trip) + Completed + Cancelled. Cancelled includes Rejected: ' + c.rejected + ' now, ' + p.rejected + ' in the previous period.'));
     return wrap;
   }
 
@@ -2924,10 +2923,10 @@
 
   function mrStatusTable_(data, maxRows) {
     var groups = mrLimitGroups_(data.groups, maxRows);
-    var rows = groups.map(function (g) { return [g.label, g.total, g.allocated, g.pending, g.completed, g.cancelled]; });
+    var rows = groups.map(function (g) { return [g.label, g.total, g.pending, g.allocated, g.inProgress, g.completed, g.cancelled]; });
     var c = data.stats.current;
-    return mrTable_([mrGroupColLabel_(data), 'Total Request', 'Total Allocated', 'Total Pending', 'Completed', 'Cancelled'],
-      rows, ['Total', c.total, c.allocated, c.pending, c.completed, c.cancelled]);
+    return mrTable_([mrGroupColLabel_(data), 'Total Request', 'Pending', 'Allocated', 'In Progress', 'Completed', 'Cancelled'],
+      rows, ['Total', c.total, c.pending, c.allocated, c.inProgress, c.completed, c.cancelled]);
   }
 
   function mrProcessTable_(data, maxRows) {
@@ -3133,7 +3132,7 @@
     rows.push([]);
     rows.push(['REQUEST SUMMARY']);
     rows.push(['Metric', 'This period', 'Previous period', 'Change']);
-    [['Total Request', 'total'], ['Total Allocated', 'allocated'], ['Total Pending', 'pending'], ['Completed', 'completed'], ['Cancelled', 'cancelled'], ['Rejected', 'rejected']].forEach(function (m) {
+    [['Total Request', 'total'], ['Pending', 'pending'], ['Allocated', 'allocated'], ['In Progress (Reached, Loading, On Trip)', 'inProgress'], ['Completed', 'completed'], ['Cancelled (includes Rejected)', 'cancelled'], ['   of which Rejected', 'rejected']].forEach(function (m) {
       rows.push([m[0], c[m[1]], p[m[1]], chg(c[m[1]], p[m[1]])]);
     });
     rows.push([]);
@@ -3149,9 +3148,9 @@
     rows.push(['Load End vs Trip Start', mins(data.gaps.loadEndToTripStart), data.gaps.loadEndToTripStart.n]);
     rows.push([]);
     rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' REQUEST STATUS']);
-    rows.push([mrGroupColLabel_(data), 'Total Request', 'Total Allocated', 'Total Pending', 'Completed', 'Cancelled', 'Rejected']);
-    data.groups.forEach(function (g) { rows.push([g.label, g.total, g.allocated, g.pending, g.completed, g.cancelled, g.rejected]); });
-    rows.push(['Total', c.total, c.allocated, c.pending, c.completed, c.cancelled, c.rejected]);
+    rows.push([mrGroupColLabel_(data), 'Total Request', 'Pending', 'Allocated', 'In Progress', 'Completed', 'Cancelled (incl. Rejected)', 'of which Rejected']);
+    data.groups.forEach(function (g) { rows.push([g.label, g.total, g.pending, g.allocated, g.inProgress, g.completed, g.cancelled, g.rejected]); });
+    rows.push(['Total', c.total, c.pending, c.allocated, c.inProgress, c.completed, c.cancelled, c.rejected]);
     rows.push([]);
     rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' PROCESS TIME AND GAP TIME (average, minutes)']);
     rows.push([mrGroupColLabel_(data), 'Request to Allocation', 'Avg Loading', 'Avg Trip', 'Required vs Planned', 'Planned vs Reached', 'Reached vs Load Start', 'Load End vs Trip Start']);
