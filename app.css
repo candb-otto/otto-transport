@@ -466,7 +466,7 @@
   .mr-sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--mr-orange); margin: 22px 0 10px; padding-bottom: 4px; }
   .mr-sec-head h3 { margin: 0; font-size: 1.02rem; font-weight: 800; }
   .mr-sec-note { font-size: 0.8rem; color: var(--muted); }
-  .mr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .mr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 12px; }
   .mr-kpi { border: 1px solid var(--mr-line); border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); background: #fff; }
   .mr-kpi-label { font-size: 0.82rem; font-weight: 600; color: #4a5560; }
   .mr-kpi-value { font-size: 1.9rem; font-weight: 800; margin: 2px 0; line-height: 1.15; }
@@ -551,3 +551,42 @@
     .mr-page { break-after: page; page-break-after: always; }
     .mr-page:last-child { break-after: auto; page-break-after: auto; }
   }
+
+
+  /* ---------- Shared vehicle list in the Allocate window ---------- */
+  .extra-list { max-height: 150px; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin: 4px 0 8px; }
+  .extra-row { display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 0.86rem; padding: 3px 0; cursor: pointer; }
+  .extra-row input { width: auto; margin: 0; }
+
+
+  /* ---------- Management Report: percentages, tabs, timeline summary ---------- */
+  .mr-pct { font-size: 0.55em; font-weight: 600; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+  .mr-table td .mr-pct { font-size: 0.78em; margin-left: 4px; }
+  .mr-page .mr-pct { font-size: 0.5em; }
+  .mr-page .mr-table td .mr-pct { font-size: 8px; }
+  .mr-tabs { display: flex; gap: 6px; margin: 4px 0 12px; }
+  .mr-tabs button { border-radius: 6px; font-weight: 600; }
+  .mr-tabs .mr-tab { background: #fff; color: var(--primary-ink); border: 1px solid var(--primary); }
+  .mr-tabs .mr-tab-on { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+  .mr-subtitle { text-align: center; font-weight: 700; font-size: 1.05rem; color: var(--mr-dark); margin-top: -2px; }
+  .mr-tlbar-box { border: 1px solid var(--mr-line); border-radius: 10px; padding: 12px 14px; }
+  .mr-tlbar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; background: #f1f3f5; }
+  .mr-tlseg { height: 100%; }
+  .mr-tllegend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; font-size: 0.82rem; }
+  .mr-tlitem { display: inline-flex; align-items: center; gap: 5px; }
+  .mr-tldot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .mr-tlnote { font-size: 0.82rem; margin-top: 6px; color: #4a5560; }
+  .mr-tl-table .mr-table th { font-size: 0.78rem; white-space: normal; }
+  .mr-page .mr-tl-table .mr-table th { font-size: 8.5px; padding: 4px 4px; }
+  .mr-page .mr-tl-table .mr-table td { padding: 4px 4px; font-size: 9.5px; }
+  .mr-page .mr-tlbar-box { padding: 8px 10px; }
+  .mr-page .mr-tllegend { font-size: 9.5px; }
+  .mr-page .mr-tlnote { font-size: 9.5px; }
+  .mr-page .mr-subtitle { font-size: 14px; }
+
+
+  /* ---------- Calculations page ---------- */
+  .calc-section { margin-top: 18px; }
+  .calc-section h3 { margin: 0 0 6px; font-size: 1.02rem; color: var(--primary-ink); }
+  .calc-table td { vertical-align: top; }
+  .calc-table .calc-name { font-weight: 600; white-space: nowrap; }

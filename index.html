@@ -133,7 +133,11 @@
         <div><label for="allocStart">Planned Start</label><input id="allocStart" type="datetime-local"></div>
         <div><label for="allocRemarks">Remarks (optional)</label><input id="allocRemarks" type="text"></div>
       </div>
-      <p class="hint">Vehicle and driver lists only show those currently Available. The trip is assumed to take up to a few hours for scheduling checks.</p>
+      <div id="allocExtraWrap" hidden>
+        <label>Also carry these Pending requests on the same vehicle (optional)</label>
+        <div id="allocExtraList" class="extra-list"></div>
+      </div>
+      <p class="hint">Vehicle and driver lists only show those currently Available. Planned Start cannot be earlier than the current date and time. The trip is assumed to take up to a few hours for scheduling checks.</p>
       <div class="actions">
         <button type="button" id="allocSaveBtn">Allocate</button>
         <button type="button" id="allocCancelBtn" class="outline">Cancel</button>

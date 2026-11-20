@@ -326,6 +326,8 @@
         return '<svg ' + a + '><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
       case 'managementReport':
         return '<svg ' + a + '><rect x="4" y="3" width="16" height="18" rx="2"></rect><polyline points="8 15 11 12 13 14 17 9"></polyline><line x1="8" y1="18" x2="16" y2="18"></line></svg>';
+      case 'calculations':
+        return '<svg ' + a + '><rect x="5" y="3" width="14" height="18" rx="2"></rect><rect x="8" y="6" width="8" height="4"></rect><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line><line x1="12" y1="18" x2="16" y2="18"></line></svg>';
       case 'reports':
         return '<svg ' + a + '><line x1="4" y1="20" x2="20" y2="20"></line><rect x="6" y="11" width="3" height="7"></rect><rect x="11" y="7" width="3" height="11"></rect><rect x="16" y="14" width="3" height="4"></rect></svg>';
       case 'departments':
@@ -691,6 +693,8 @@
       loadReports();
     } else if (id === 'managementReport') {
       loadManagementReport();
+    } else if (id === 'calculations') {
+      loadCalculations();
     } else {
       showPlaceholder(label);
     }
@@ -1192,7 +1196,7 @@
         '<select id="locStatusFilter"></select>' +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Location ID</th><th>Name</th><th>Code</th><th>Type</th><th>Address</th><th>Status</th><th></th>' +
+      '<th>Location ID</th><th>Name</th><th>Code</th><th>Type</th><th>Address</th><th>Status</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="locBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -1267,6 +1271,7 @@
         addCellText(tr, l.locationType || '-');
         addCellText(tr, l.address || '-');
         addStatusCell(tr, l.isActive ? 'Active' : 'Inactive', l.isActive ? 'status-active' : 'status-inactive');
+        addCellText(tr, l.remarks || '-');
 
         var actionsTd = document.createElement('td');
         var editBtn = actionBtn_('edit', 'Edit');
@@ -1285,7 +1290,7 @@
     function applyFilters() {
       var search = document.getElementById('locSearch').value;
       var status = document.getElementById('locStatusFilter').value;
-      var filtered = filterRows_(locCache, search, ['locationName', 'locationCode', 'locationType', 'address']);
+      var filtered = filterRows_(locCache, search, ['locationName', 'locationCode', 'locationType', 'address', 'remarks']);
       if (status) filtered = filtered.filter(function (l) { return String(l.isActive) === status; });
       renderList(filtered);
     }
@@ -1357,7 +1362,7 @@
         '<select id="vehiclesStatusFilter"></select>' +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Vehicle No</th><th>Type</th><th>Capacity</th><th>Location</th><th>Status</th><th>Active From</th><th></th>' +
+      '<th>Vehicle No</th><th>Type</th><th>Capacity</th><th>Location</th><th>Status</th><th>Active From</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="vehiclesBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -1487,6 +1492,7 @@
         addCellText(tr, v.currentLocation || '-');
         addStatusCell(tr, v.status, statusClass(v.status));
         addCellText(tr, v.activeFrom || '-');
+        addCellText(tr, v.remarks || '-');
 
         var actionsTd = document.createElement('td');
         var editBtn = actionBtn_('edit', 'Edit');
@@ -1505,7 +1511,7 @@
     function applyFilters() {
       var search = document.getElementById('vehiclesSearch').value;
       var status = document.getElementById('vehiclesStatusFilter').value;
-      renderList(filterRows_(vehiclesCache, search, ['vehicleNo', 'type', 'subType', 'currentLocation'], status, 'status'));
+      renderList(filterRows_(vehiclesCache, search, ['vehicleNo', 'type', 'subType', 'currentLocation', 'remarks'], status, 'status'));
     }
 
     function loadList() {
@@ -1577,7 +1583,7 @@
         '<select id="driversStatusFilter"></select>' +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Emp Code</th><th>Name</th><th>Mobile</th><th>License No</th><th>License Expiry</th><th>Status</th><th></th>' +
+      '<th>Emp Code</th><th>Name</th><th>Mobile</th><th>License No</th><th>License Expiry</th><th>Status</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="driversBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -1684,6 +1690,7 @@
         addCellText(tr, d.licenseNo);
         addCellText(tr, d.licenseExpiry || '-', isExpirySoon(toIsoDateForInput_(d.licenseExpiry)) ? 'bad' : '');
         addStatusCell(tr, d.status, statusClass(d.status));
+        addCellText(tr, d.remarks || '-');
 
         var actionsTd = document.createElement('td');
         var editBtn = actionBtn_('edit', 'Edit');
@@ -1702,7 +1709,7 @@
     function applyFilters() {
       var search = document.getElementById('driversSearch').value;
       var status = document.getElementById('driversStatusFilter').value;
-      renderList(filterRows_(driversCache, search, ['employeeCode', 'driverName', 'mobile', 'licenseNo'], status, 'status'));
+      renderList(filterRows_(driversCache, search, ['employeeCode', 'driverName', 'mobile', 'licenseNo', 'remarks'], status, 'status'));
     }
 
     function loadList() {
@@ -1954,7 +1961,13 @@
     msg.textContent = '';
     msg.className = 'msg';
     document.getElementById('allocRemarks').value = '';
-    document.getElementById('allocStart').value = combineForDateTimeLocal(r.requiredDate, r.requiredTime);
+    // Planned Start must be now or later: use the required time, or the current time if that has already passed
+    var nowLocal = nowIstLocal_();
+    var startEl = document.getElementById('allocStart');
+    startEl.min = nowLocal;
+    var wanted = combineForDateTimeLocal(r.requiredDate, r.requiredTime);
+    startEl.value = (wanted && wanted >= nowLocal) ? wanted : nowLocal;
+    loadAllocExtras_(r);
 
     var vehSel = document.getElementById('allocVehicle');
     var drvSel = document.getElementById('allocDriver');
@@ -1984,6 +1997,39 @@
       });
   }
 
+  // Current India time as yyyy-mm-ddThh:mm (the format of a date-time box)
+  function nowIstLocal_() {
+    return new Date(Date.now() + 19800000).toISOString().slice(0, 16);
+  }
+
+  // Other Pending requests of the same vehicle type that can travel on the same vehicle
+  function loadAllocExtras_(r) {
+    var wrap = document.getElementById('allocExtraWrap');
+    var list = document.getElementById('allocExtraList');
+    list.textContent = '';
+    wrap.hidden = true;
+    callBackend('getGvRequests', [state.token], null,
+      function (res) {
+        var others = (res.data.requests || []).filter(function (x) {
+          return x.allocatable && x.requestId !== r.requestId && x.requiredType === r.requiredType;
+        });
+        if (!others.length) return;
+        others.forEach(function (x) {
+          var row = document.createElement('label');
+          row.className = 'extra-row';
+          var cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = x.requestId;
+          row.appendChild(cb);
+          row.appendChild(document.createTextNode(' ' + x.requestId + ' \u2013 ' + x.requestedByName + ' \u2013 ' +
+            x.fromLocationName + ' \u2192 ' + x.toLocationName + ' \u2013 ' + x.requiredDate + ' ' + x.requiredTime));
+          list.appendChild(row);
+        });
+        wrap.hidden = false;
+      },
+      function () { /* the extra list is optional; ignore errors */ });
+  }
+
   function closeAllocateModal() {
     document.getElementById('allocateOverlay').hidden = true;
   }
@@ -1994,11 +2040,19 @@
     msg.textContent = '';
     msg.className = 'msg';
 
+    var plannedValue = document.getElementById('allocStart').value;
+    if (plannedValue && plannedValue < nowIstLocal_()) {
+      msg.textContent = 'Planned Start cannot be earlier than the current date and time.';
+      msg.className = 'msg bad';
+      return;
+    }
+    var extraIds = Array.prototype.map.call(document.querySelectorAll('#allocExtraList input:checked'), function (cb) { return cb.value; });
     var payload = {
       requestId: allocContext.requestId,
+      extraRequestIds: extraIds,
       vehicleId: document.getElementById('allocVehicle').value,
       driverId: document.getElementById('allocDriver').value,
-      plannedStartDateTime: document.getElementById('allocStart').value,
+      plannedStartDateTime: plannedValue,
       remarks: document.getElementById('allocRemarks').value.trim()
     };
 
@@ -2240,6 +2294,7 @@
       addCellText(tr, r.requiredType + (r.requiredCapacity ? ' (' + r.requiredCapacity + ')' : ''));
       addCellText(tr, r.priority || '-');
       addStatusCell(tr, r.status, requestStatusClass(r.status));
+      addCellText(tr, r.remarks || '-');
 
       var actionsTd = document.createElement('td');
 
@@ -2454,7 +2509,7 @@
         '<select id="myReqStatusFilter"></select>' +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Request ID</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th></th>' +
+      '<th>Request ID</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="myReqBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -2524,7 +2579,7 @@
         (pendingOnly ? '' : '<select id="reqListStatusFilter"></select>') +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Request ID</th><th>Requested By</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th></th>' +
+      '<th>Request ID</th><th>Requested By</th><th>Route</th><th>Required</th><th>Purpose</th><th>Type (Qty)</th><th>Priority</th><th>Status</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="reqListBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -2558,7 +2613,7 @@
       var search = document.getElementById('reqListSearch').value;
       var statusEl = document.getElementById('reqListStatusFilter');
       var status = statusEl ? statusEl.value : '';
-      var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName'], status, 'status');
+      var filtered = filterRows_(baseRows, search, ['requestId', 'requestedByName', 'purpose', 'fromLocationName', 'toLocationName', 'remarks'], status, 'status');
       filtered = applyExtraFilters_(filtered, reqExtraSpec);
       reqListCurrentFiltered = filtered;
       pagedRender_('reqListBody', filtered, function (pageRows) {
@@ -2646,7 +2701,7 @@
         '<select id="allocStatusFilter"></select>' +
       '</div>' +
       '<div class="table-wrap"><table><thead><tr>' +
-      '<th>Allocation ID</th><th>Request</th><th>Requested By</th><th>Requester Mobile</th><th>Requested On</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Driver Mobile</th><th>Planned Start</th><th>Status</th><th>Allocated By</th><th></th>' +
+      '<th>Allocation ID</th><th>Request</th><th>Requested By</th><th>Requester Mobile</th><th>Requested On</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Driver Mobile</th><th>Planned Start</th><th>Status</th><th>Allocated By</th><th>Remarks</th><th></th>' +
       '</tr></thead><tbody id="allocListBody"></tbody></table></div>';
     page.appendChild(listCard);
 
@@ -2698,7 +2753,8 @@
       rows.forEach(function (a) {
         var tr = document.createElement('tr');
         addCellText(tr, a.allocationId);
-        addCellText(tr, a.requestId + (a.requestPurpose ? ' \u2013 ' + a.requestPurpose : ''));
+        addCellText(tr, a.requestId + (a.requestPurpose ? ' \u2013 ' + a.requestPurpose : '') +
+          (a.sharedWith && a.sharedWith.length ? ' (shares vehicle with ' + a.sharedWith.join(', ') + ')' : ''));
         addCellText(tr, a.requestedByName || '-');
         addCellText(tr, a.requestedByMobile || '-');
         addCellText(tr, a.requestDateTime || '-');
@@ -2710,6 +2766,7 @@
         addCellText(tr, a.plannedStartDateTime);
         addStatusCell(tr, a.status, allocationStatusClass(a.status));
         addCellText(tr, a.allocatedByName);
+        addCellText(tr, a.remarks || '-');
 
         var actionsTd = document.createElement('td');
         var allocTimelineBtn = actionBtn_('timeline', 'Timeline');
@@ -2740,7 +2797,7 @@
     function applyFilters() {
       var search = document.getElementById('allocSearch').value;
       var status = document.getElementById('allocStatusFilter').value;
-      var filtered = filterRows_(allocCache, search, ['allocationId', 'requestId', 'requestedByName', 'requestedByMobile', 'requestFromLocationName', 'requestToLocationName', 'vehicleNo', 'driverName', 'driverMobile', 'allocatedByName'], status, 'status');
+      var filtered = filterRows_(allocCache, search, ['allocationId', 'requestId', 'requestedByName', 'requestedByMobile', 'requestFromLocationName', 'requestToLocationName', 'vehicleNo', 'driverName', 'driverMobile', 'allocatedByName', 'remarks'], status, 'status');
       filtered = applyExtraFilters_(filtered, allocExtraSpec);
       allocCurrentFiltered = filtered;
       renderAllocRows(filtered);
@@ -2825,6 +2882,9 @@
     });
     ['requestToAllocation', 'loading', 'trip'].forEach(function (k) { o.process[k] = mrMerge_(rest.map(function (g) { return g.process[k]; })); });
     ['requiredToPlanned', 'plannedToReached', 'reachedToLoadStart', 'loadEndToTripStart'].forEach(function (k) { o.gaps[k] = mrMerge_(rest.map(function (g) { return g.gaps[k]; })); });
+    o.timeline = { requests: 0, allocated: 0, completed: 0, stages: {} };
+    rest.forEach(function (g) { o.timeline.requests += g.timeline.requests; o.timeline.allocated += g.timeline.allocated; o.timeline.completed += g.timeline.completed; });
+    Object.keys(rest[0].timeline.stages).forEach(function (k) { o.timeline.stages[k] = mrMerge_(rest.map(function (g) { return g.timeline.stages[k]; })); });
     return keep.concat([o]);
   }
 
@@ -2840,10 +2900,17 @@
     return d;
   }
 
-  function mrKpi_(label, value, sub) {
+  // Share of the requests raised, as a whole-number percentage ('' when there are no requests)
+  function mrPct_(n, total) {
+    return total ? Math.round((n / total) * 100) + '%' : '';
+  }
+
+  function mrKpi_(label, value, sub, pct) {
     var c = el('div', 'mr-kpi');
     c.appendChild(el('div', 'mr-kpi-label', label));
-    c.appendChild(el('div', 'mr-kpi-value', String(value)));
+    var v = el('div', 'mr-kpi-value', String(value));
+    if (pct) v.appendChild(el('span', 'mr-pct', pct));
+    c.appendChild(v);
     if (sub) c.appendChild(sub);
     return c;
   }
@@ -2865,12 +2932,12 @@
   function mrRequestKpis_(data) {
     var c = data.stats.current, p = data.stats.previous;
     var g = mrKpiGrid_(6);
-    g.appendChild(mrKpi_('Total Request', c.total, mrDeltaEl_(c.total, p.total, true)));
-    g.appendChild(mrKpi_('Pending', c.pending, mrDeltaEl_(c.pending, p.pending, false)));
-    g.appendChild(mrKpi_('Allocated', c.allocated, mrDeltaEl_(c.allocated, p.allocated, true)));
-    g.appendChild(mrKpi_('In Progress', c.inProgress, mrDeltaEl_(c.inProgress, p.inProgress, true)));
-    g.appendChild(mrKpi_('Completed', c.completed, mrDeltaEl_(c.completed, p.completed, true)));
-    g.appendChild(mrKpi_('Cancelled', c.cancelled, mrDeltaEl_(c.cancelled, p.cancelled, false)));
+    g.appendChild(mrKpi_('Total Request', c.total, mrDeltaEl_(c.total, p.total, true), c.total ? '100%' : ''));
+    g.appendChild(mrKpi_('Pending', c.pending, mrDeltaEl_(c.pending, p.pending, false), mrPct_(c.pending, c.total)));
+    g.appendChild(mrKpi_('Allocated', c.allocated, mrDeltaEl_(c.allocated, p.allocated, true), mrPct_(c.allocated, c.total)));
+    g.appendChild(mrKpi_('In Progress', c.inProgress, mrDeltaEl_(c.inProgress, p.inProgress, true), mrPct_(c.inProgress, c.total)));
+    g.appendChild(mrKpi_('Completed', c.completed, mrDeltaEl_(c.completed, p.completed, true), mrPct_(c.completed, c.total)));
+    g.appendChild(mrKpi_('Cancelled', c.cancelled, mrDeltaEl_(c.cancelled, p.cancelled, false), mrPct_(c.cancelled, c.total)));
     var wrap = el('div');
     wrap.appendChild(g);
     wrap.appendChild(el('div', 'mr-foot', 'Total = Pending + Allocated + In Progress (Reached, Loading, On Trip) + Completed + Cancelled. Cancelled includes Rejected: ' + c.rejected + ' now, ' + p.rejected + ' in the previous period.'));
@@ -2906,7 +2973,15 @@
     var tb = el('tbody');
     function addRow(cells, cls) {
       var tr = el('tr', cls || '');
-      cells.forEach(function (c, i) { tr.appendChild(el('td', i === 0 ? 'left' : '', String(c))); });
+      cells.forEach(function (c, i) {
+        if (c && typeof c === 'object') {
+          var td = el('td', i === 0 ? 'left' : '', String(c.t));
+          if (c.s) td.appendChild(el('span', 'mr-pct', c.s));
+          tr.appendChild(td);
+        } else {
+          tr.appendChild(el('td', i === 0 ? 'left' : '', String(c)));
+        }
+      });
       tb.appendChild(tr);
     }
     rows.forEach(function (r) { addRow(r); });
@@ -2923,10 +2998,14 @@
 
   function mrStatusTable_(data, maxRows) {
     var groups = mrLimitGroups_(data.groups, maxRows);
-    var rows = groups.map(function (g) { return [g.label, g.total, g.pending, g.allocated, g.inProgress, g.completed, g.cancelled]; });
+    function line(label, x) {
+      function cell(n) { return { t: n, s: mrPct_(n, x.total) }; }
+      return [label, x.total, cell(x.pending), cell(x.allocated), cell(x.inProgress), cell(x.completed), cell(x.cancelled)];
+    }
+    var rows = groups.map(function (g) { return line(g.label, g); });
     var c = data.stats.current;
     return mrTable_([mrGroupColLabel_(data), 'Total Request', 'Pending', 'Allocated', 'In Progress', 'Completed', 'Cancelled'],
-      rows, ['Total', c.total, c.pending, c.allocated, c.inProgress, c.completed, c.cancelled]);
+      rows, line('Total', c));
   }
 
   function mrProcessTable_(data, maxRows) {
@@ -3015,6 +3094,101 @@
     return doc;
   }
 
+
+  // ----- Timeline Summary (department wise): the same stages as a request's Timeline -----
+
+  var MR_TL_HEAD_ = {
+    raisedToAllocated: 'Request → Allocation', allocatedToReached: 'Allocation → Reached',
+    reachedToLoadStart: 'Reached → Load Start', loading: 'Loading Time',
+    readyToTripStart: 'Ready → Trip Start', trip: 'Trip Time', total: 'Total (Request → Completed)'
+  };
+  var MR_TL_COLORS_ = { raisedToAllocated: '#f8a51a', allocatedToReached: '#0b2014', reachedToLoadStart: '#6f9c82',
+    loading: '#c8433c', readyToTripStart: '#2f6fed', trip: '#b08d1e' };
+
+  function mrTimelineTable_(data, maxRows) {
+    var groups = mrLimitGroups_(data.groups, maxRows);
+    var stages = data.timelineStages;
+    function line(label, tl) {
+      var row = [label, tl.requests, tl.completed];
+      stages.forEach(function (s) {
+        var v = tl.stages[s.key];
+        row.push({ t: mrDur_(v.ms), s: v.n ? '(' + v.n + ')' : '' });
+      });
+      return row;
+    }
+    var heads = [mrGroupColLabel_(data), 'Requests', 'Completed'].concat(stages.map(function (s) { return MR_TL_HEAD_[s.key] || s.label; }));
+    var rows = groups.map(function (g) { return line(g.label, g.timeline); });
+    var wrap = mrTable_(heads, rows, line('All', data.timeline));
+    wrap.classList.add('mr-tl-table');
+    return wrap;
+  }
+
+  // One bar showing where the time goes, from request to trip end (average of all requests)
+  function mrTimelineBar_(data) {
+    var box = el('div', 'mr-tlbar-box');
+    var stages = data.timelineStages.filter(function (s) { return s.key !== 'total'; });
+    var total = 0;
+    stages.forEach(function (s) { var v = data.timeline.stages[s.key]; if (v.ms) total += v.ms; });
+    if (!total) { box.appendChild(el('div', 'mr-chart-empty', 'No timeline data in this period yet.')); return box; }
+    var bar = el('div', 'mr-tlbar');
+    stages.forEach(function (s) {
+      var v = data.timeline.stages[s.key];
+      if (!v.ms) return;
+      var seg = el('div', 'mr-tlseg');
+      seg.style.width = Math.max(1.5, (v.ms / total) * 100) + '%';
+      seg.style.background = MR_TL_COLORS_[s.key] || '#999';
+      seg.title = (MR_TL_HEAD_[s.key] || s.label) + ': ' + mrDur_(v.ms);
+      bar.appendChild(seg);
+    });
+    box.appendChild(bar);
+    var legend = el('div', 'mr-tllegend');
+    stages.forEach(function (s) {
+      var v = data.timeline.stages[s.key];
+      var item = el('span', 'mr-tlitem');
+      var dot = el('i', 'mr-tldot'); dot.style.background = MR_TL_COLORS_[s.key] || '#999';
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode((MR_TL_HEAD_[s.key] || s.label) + ': ' + (v.ms ? mrDur_(v.ms) : '-')));
+      legend.appendChild(item);
+    });
+    box.appendChild(legend);
+    var tot = data.timeline.stages.total;
+    box.appendChild(el('div', 'mr-tlnote', 'Average total from request to trip completed: ' + (tot.ms ? mrDur_(tot.ms) : '-') + (tot.n ? ' (' + tot.n + ' completed requests)' : '')));
+    return box;
+  }
+
+  var MR_TL_NOTE_ = 'Average time spent between the stages of the request timeline (the same stages the Timeline button shows for one request). The figure in brackets is the number of requests counted. Loading stages apply to Goods Vehicles only.';
+
+  function mrBuildTimelineScreen_(data) {
+    var doc = el('div', 'mr-doc');
+    doc.appendChild(el('div', 'mr-title', MR_TITLE + ' – Timeline Summary'));
+    doc.appendChild(el('div', 'mr-rule'));
+    doc.appendChild(mrFilterBar_(data));
+    doc.appendChild(mrSection_('Average Timeline', 'all requests in the period'));
+    doc.appendChild(mrTimelineBar_(data));
+    doc.appendChild(mrSection_('Timeline Summary', mrGroupNote_(data)));
+    doc.appendChild(mrTimelineTable_(data, 0));
+    doc.appendChild(el('div', 'mr-foot', MR_TL_NOTE_));
+    return doc;
+  }
+
+  function mrBuildTimelinePdfPages_(data, opts) {
+    var tight = opts.tight ? ' tight' : '';
+    var p = el('div', 'mr-page' + tight), b = el('div', 'mr-body');
+    b.appendChild(mrPdfHeader_());
+    b.appendChild(el('div', 'mr-title', MR_TITLE));
+    b.appendChild(el('div', 'mr-subtitle', 'Timeline Summary'));
+    b.appendChild(el('div', 'mr-rule'));
+    b.appendChild(mrFilterBar_(data));
+    b.appendChild(mrSection_('Average Timeline', 'all requests in the period'));
+    b.appendChild(mrTimelineBar_(data));
+    b.appendChild(mrSection_('Timeline Summary', mrGroupNote_(data)));
+    b.appendChild(mrTimelineTable_(data, opts.rows));
+    b.appendChild(el('div', 'mr-foot', MR_TL_NOTE_));
+    p.appendChild(b);
+    p.appendChild(mrPdfFooter_(data, 1, 1));
+    return [p];
+  }
+
   // ----- PDF: exactly two A4 pages in the same look as the factory production report -----
 
   function mrPdfHeader_() {
@@ -3031,10 +3205,10 @@
     return wrap;
   }
 
-  function mrPdfFooter_(data, pageNo) {
+  function mrPdfFooter_(data, pageNo, totalPages) {
     var f = el('div', 'mr-pdf-footer');
     f.appendChild(el('span', '', 'Generated ' + data.generatedAt + ' · Otto Transport System'));
-    f.appendChild(el('span', '', 'Page ' + pageNo + ' of 2'));
+    f.appendChild(el('span', '', 'Page ' + pageNo + ' of ' + (totalPages || 2)));
     return f;
   }
 
@@ -3084,7 +3258,7 @@
   // Export as PDF: the two A4 pages are built in a hidden area, then the browser's
   // own print window opens with only those pages (Destination: Save as PDF).
   // Text stays sharp, and no outside library is needed.
-  function mrExportPdf_(data, button) {
+  function mrExportPdf_(data, button, mode) {
     var stage = document.getElementById('mrPrintRoot');
     if (stage) stage.parentNode.removeChild(stage);
     stage = el('div', 'mr-pdf-stage');
@@ -3098,14 +3272,14 @@
     ];
     for (var i = 0; i < attempts.length; i++) {
       stage.textContent = '';
-      var pages = mrBuildPdfPages_(data, attempts[i]);
+      var pages = mode === 'timeline' ? mrBuildTimelinePdfPages_(data, attempts[i]) : mrBuildPdfPages_(data, attempts[i]);
       pages.forEach(function (p) { stage.appendChild(p); });
       var fits = pages.every(function (p) { var b = p.querySelector('.mr-body'); return b.scrollHeight <= b.clientHeight + 1; });
       if (fits) break;
     }
 
     var oldTitle = document.title;
-    document.title = 'Transport_Vehicle_Allocation_Report_' + data.period.from + (data.period.to !== data.period.from ? '_to_' + data.period.to : '');
+    document.title = 'Transport_Vehicle_Allocation_Report' + (mode === 'timeline' ? '_Timeline' : '') + '_' + data.period.from + (data.period.to !== data.period.from ? '_to_' + data.period.to : '');
     function cleanup() {
       window.removeEventListener('afterprint', cleanup);
       document.title = oldTitle;
@@ -3131,9 +3305,9 @@
     rows.push(['Generated', data.generatedAt]);
     rows.push([]);
     rows.push(['REQUEST SUMMARY']);
-    rows.push(['Metric', 'This period', 'Previous period', 'Change']);
+    rows.push(['Metric', 'This period', '% of requests raised', 'Previous period', 'Change']);
     [['Total Request', 'total'], ['Pending', 'pending'], ['Allocated', 'allocated'], ['In Progress (Reached, Loading, On Trip)', 'inProgress'], ['Completed', 'completed'], ['Cancelled (includes Rejected)', 'cancelled'], ['   of which Rejected', 'rejected']].forEach(function (m) {
-      rows.push([m[0], c[m[1]], p[m[1]], chg(c[m[1]], p[m[1]])]);
+      rows.push([m[0], c[m[1]], mrPct_(c[m[1]], c.total), p[m[1]], chg(c[m[1]], p[m[1]])]);
     });
     rows.push([]);
     rows.push(['PROCESS TIME AND GAP TIME (average, minutes)']);
@@ -3148,9 +3322,13 @@
     rows.push(['Load End vs Trip Start', mins(data.gaps.loadEndToTripStart), data.gaps.loadEndToTripStart.n]);
     rows.push([]);
     rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' REQUEST STATUS']);
-    rows.push([mrGroupColLabel_(data), 'Total Request', 'Pending', 'Allocated', 'In Progress', 'Completed', 'Cancelled (incl. Rejected)', 'of which Rejected']);
-    data.groups.forEach(function (g) { rows.push([g.label, g.total, g.pending, g.allocated, g.inProgress, g.completed, g.cancelled, g.rejected]); });
-    rows.push(['Total', c.total, c.pending, c.allocated, c.inProgress, c.completed, c.cancelled, c.rejected]);
+    rows.push([mrGroupColLabel_(data), 'Total Request', 'Pending', 'Allocated', 'In Progress', 'Completed', 'Cancelled (incl. Rejected)', 'of which Rejected', 'Pending %', 'Allocated %', 'In Progress %', 'Completed %', 'Cancelled %']);
+    function statusLine(label, g) {
+      return [label, g.total, g.pending, g.allocated, g.inProgress, g.completed, g.cancelled, g.rejected,
+        mrPct_(g.pending, g.total), mrPct_(g.allocated, g.total), mrPct_(g.inProgress, g.total), mrPct_(g.completed, g.total), mrPct_(g.cancelled, g.total)];
+    }
+    data.groups.forEach(function (g) { rows.push(statusLine(g.label, g)); });
+    rows.push(statusLine('Total', c));
     rows.push([]);
     rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' PROCESS TIME AND GAP TIME (average, minutes)']);
     rows.push([mrGroupColLabel_(data), 'Request to Allocation', 'Avg Loading', 'Avg Trip', 'Required vs Planned', 'Planned vs Reached', 'Reached vs Load Start', 'Load End vs Trip Start']);
@@ -3158,6 +3336,14 @@
       rows.push([g.label, mins(g.process.requestToAllocation), mins(g.process.loading), mins(g.process.trip),
         mins(g.gaps.requiredToPlanned), mins(g.gaps.plannedToReached), mins(g.gaps.reachedToLoadStart), mins(g.gaps.loadEndToTripStart)]);
     });
+    rows.push([]);
+    rows.push([(data.groupBy === 'user' ? 'USER-WISE' : 'DEPARTMENT-WISE') + ' TIMELINE SUMMARY (average, minutes)']);
+    rows.push([mrGroupColLabel_(data), 'Requests', 'Completed'].concat(data.timelineStages.map(function (s) { return MR_TL_HEAD_[s.key] || s.label; })));
+    function tlLine(label, tl) {
+      return [label, tl.requests, tl.completed].concat(data.timelineStages.map(function (s) { return mins(tl.stages[s.key]); }));
+    }
+    data.groups.forEach(function (g) { rows.push(tlLine(g.label, g.timeline)); });
+    rows.push(tlLine('All', data.timeline));
     rows.push([]);
     rows.push(['VEHICLE-WISE TOTAL TRIPS']);
     rows.push(['Vehicle', 'Trips']);
@@ -3199,12 +3385,32 @@
       '</div>';
     page.appendChild(controls);
 
+    var tabs = el('div', 'mr-tabs');
+    tabs.innerHTML = '<button type="button" data-tab="summary" class="mr-tab-on">Summary</button>' +
+      '<button type="button" data-tab="timeline" class="mr-tab">Timeline Summary</button>';
+    page.appendChild(tabs);
+
     var msg = el('p', 'msg muted', '');
     page.appendChild(msg);
     var out = el('div');
     page.appendChild(out);
 
     var current = null;
+    var activeTab = 'summary';
+    function renderOut() {
+      out.textContent = '';
+      if (!current) return;
+      out.appendChild(activeTab === 'timeline' ? mrBuildTimelineScreen_(current) : mrBuildScreen_(current));
+      Array.prototype.forEach.call(tabs.querySelectorAll('button'), function (b) {
+        b.className = b.getAttribute('data-tab') === activeTab ? 'mr-tab-on' : 'mr-tab';
+      });
+    }
+    tabs.addEventListener('click', function (e) {
+      var t = e.target && e.target.getAttribute && e.target.getAttribute('data-tab');
+      if (!t) return;
+      activeTab = t;
+      renderOut();
+    });
     var fromEl = document.getElementById('mrFrom'), toEl = document.getElementById('mrTo'), deptEl = document.getElementById('mrDept');
     var csvBtn = document.getElementById('mrCsvBtn'), pdfBtn = document.getElementById('mrPdfBtn'), applyBtn = document.getElementById('mrApplyBtn');
 
@@ -3228,8 +3434,7 @@
           if (thisLoad !== state.loadCounter || state.current !== 'managementReport') return;
           current = res.data;
           msg.textContent = '';
-          out.textContent = '';
-          out.appendChild(mrBuildScreen_(current));
+          renderOut();
           csvBtn.disabled = false; pdfBtn.disabled = false;
         },
         function (err) {
@@ -3248,7 +3453,7 @@
     applyBtn.addEventListener('click', load);
     deptEl.addEventListener('change', load);
     csvBtn.addEventListener('click', function () { if (current) mrExportCsv_(current); });
-    pdfBtn.addEventListener('click', function () { if (current) mrExportPdf_(current, pdfBtn); });
+    pdfBtn.addEventListener('click', function () { if (current) mrExportPdf_(current, pdfBtn, activeTab); });
 
     var today = mrQuickRange_('today');
     fromEl.value = today.from; toEl.value = today.to;
@@ -3263,6 +3468,79 @@
       function () { fillSelect(deptEl, [], 'id', 'name', 'All Departments'); load(); });
   }
 
+
+
+  // ---------- Calculations guide (Super Admin only) ----------
+
+  function loadCalculations() {
+    var page = document.getElementById('page');
+    page.textContent = '';
+    var card = el('section', 'card');
+    card.innerHTML =
+      '<div class="mr-controls-top"><h2>Calculations</h2></div>' +
+      '<p class="muted">How every number in this app is calculated: Management Report, Dashboard, Reports and allocation rules.</p>' +
+      '<div class="filter-bar"><input type="text" id="calcSearch" placeholder="Search a calculation, e.g. pending, loading, late..."></div>' +
+      '<p class="msg muted" id="calcMsg">Loading...</p><div id="calcBody"></div>';
+    page.appendChild(card);
+
+    var sections = [];
+    var thisLoad = ++state.loadCounter;
+
+    function render() {
+      var q = document.getElementById('calcSearch').value.trim().toLowerCase();
+      var body = document.getElementById('calcBody');
+      body.textContent = '';
+      var shown = 0;
+      sections.forEach(function (s) {
+        var items = s.items.filter(function (i) {
+          if (!q) return true;
+          return (i.name + ' ' + i.formula + ' ' + i.note + ' ' + i.where + ' ' + s.title).toLowerCase().indexOf(q) >= 0;
+        });
+        if (!items.length) return;
+        shown += items.length;
+        var sec = el('div', 'calc-section');
+        sec.appendChild(el('h3', '', s.title));
+        if (s.intro) sec.appendChild(el('p', 'muted', s.intro));
+        var wrap = el('div', 'table-wrap');
+        var t = el('table', 'calc-table');
+        var thead = el('thead');
+        var htr = el('tr');
+        ['Item', 'How it is calculated', 'Notes', 'Where used'].forEach(function (h) { htr.appendChild(el('th', '', h)); });
+        thead.appendChild(htr);
+        t.appendChild(thead);
+        var tb = el('tbody');
+        items.forEach(function (i) {
+          var tr = el('tr');
+          tr.appendChild(el('td', 'calc-name', i.name));
+          tr.appendChild(el('td', '', i.formula));
+          tr.appendChild(el('td', '', i.note || '-'));
+          tr.appendChild(el('td', '', i.where || '-'));
+          tb.appendChild(tr);
+        });
+        t.appendChild(tb);
+        wrap.appendChild(t);
+        sec.appendChild(wrap);
+        body.appendChild(sec);
+      });
+      if (!shown) body.appendChild(el('p', 'muted', 'Nothing matches your search.'));
+    }
+
+    document.getElementById('calcSearch').addEventListener('input', render);
+
+    callBackend('getCalculationGuide', [state.token], null,
+      function (res) {
+        if (thisLoad !== state.loadCounter || state.current !== 'calculations') return;
+        sections = res.data.sections || [];
+        document.getElementById('calcMsg').textContent = '';
+        render();
+      },
+      function (err) {
+        if (isSessionError(err)) { showLogin(err); return; }
+        var m = document.getElementById('calcMsg');
+        m.className = 'msg bad';
+        m.textContent = err;
+      });
+  }
 
   // ---------- Reports (Admin) ----------
 
@@ -3315,7 +3593,7 @@
     var requestsCard = el('section', 'card');
     requestsCard.innerHTML =
       '<h2>Requests in Range</h2>' +
-      '<div class="table-wrap"><table><thead><tr><th>Request ID</th><th>Required Date</th><th>Requested By</th><th>Department</th><th>Route</th><th>Status</th></tr></thead><tbody id="rpRequestsBody"></tbody></table></div>';
+      '<div class="table-wrap"><table><thead><tr><th>Request ID</th><th>Required Date</th><th>Requested By</th><th>Department</th><th>Route</th><th>Status</th><th>Remarks</th></tr></thead><tbody id="rpRequestsBody"></tbody></table></div>';
     page.appendChild(requestsCard);
 
     function renderTiles(summary) {
@@ -3387,6 +3665,7 @@
         addCellText(row, r.departmentName || '-');
         addCellText(row, r.fromLocationName + ' \u2192 ' + r.toLocationName);
         addStatusCell(row, r.status, requestStatusClass(r.status));
+        addCellText(row, r.remarks || '-');
         body.appendChild(row);
       });
     }
